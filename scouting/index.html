@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10151d">
+  <meta name="description" content="1831M scouting dashboard for the 2026 NSW V5 State Championships.">
+  <title>1831M | States Scouting 2026</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#"><span class="mark">M</span><span>1831M <small>SCOUTING INTELLIGENCE</small></span></a>
+    <div class="event-meta"><span class="live-dot"></span> PRE-EVENT REPORT <b>03 NOV 2026</b></div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">NSW STATE CHAMPIONSHIPS · VEX V5 MIDDLE SCHOOL</div>
+      <h1>Override <span>2026</span></h1>
+      <p>Competitive intelligence for the 8 November championship at Knox Grammar School.</p>
+      <div class="hero-foot"><span>EVENT VE-V5-26-66512</span><span>24 REGISTERED TEAMS</span><span>5 DAYS TO EVENT</span></div>
+    </section>
+    <section class="stats" id="summary"></section>
+    <nav class="tabs" aria-label="Dashboard sections">
+      <button class="tab active" data-view="overview">Overview</button>
+      <button class="tab" data-view="teams">Team directory</button>
+      <button class="tab" data-view="evidence">Evidence & methodology</button>
+    </nav>
+    <section id="overview" class="view active">
+      <div class="section-head"><div><div class="eyebrow">SCOUTING SNAPSHOT</div><h2>Field overview</h2></div><span class="muted">Evidence-led · Updated 3 Nov 2026</span></div>
+      <div class="notice"><strong>Data integrity mode</strong><p>Unverified performance figures are intentionally blank. Missing data is not treated as zero, and no team ranking is inferred from incomplete evidence.</p></div>
+      <div class="panel-grid">
+        <article class="panel"><div class="panel-title">Team distribution</div><div id="school-bars" class="school-bars"></div></article>
+        <article class="panel"><div class="panel-title">Scouting coverage</div><div class="coverage"><div class="coverage-number">0<span>/24</span></div><p>team profiles independently verified in this initial scaffold</p><div class="progress"><i style="width:0%"></i></div><small>Coverage will rise as match, skills and notebook evidence is checked.</small></div></article>
+      </div>
+      <div class="section-head lower"><div><div class="eyebrow">PRIORITY LIST</div><h2>Teams to investigate</h2></div></div>
+      <div class="table-wrap"><table><thead><tr><th>TEAM</th><th>SCHOOL</th><th>EVENT RECORD</th><th>STYLE</th><th>EVIDENCE</th></tr></thead><tbody id="priority-table"></tbody></table></div>
+    </section>
+    <section id="teams" class="view">
+      <div class="section-head"><div><div class="eyebrow">ALL REGISTERED TEAMS</div><h2>Team directory</h2></div><span class="muted">24 entries</span></div>
+      <div class="filters"><input id="search" type="search" placeholder="Search team or school…" aria-label="Search teams"><select id="school-filter" aria-label="Filter by school"><option value="">All schools</option></select></div>
+      <div id="team-grid" class="team-grid"></div>
+    </section>
+    <section id="evidence" class="view">
+      <div class="section-head"><div><div class="eyebrow">TRANSPARENCY</div><h2>Evidence & methodology</h2></div></div>
+      <div class="panel">
+        <h3>How to read this dashboard</h3>
+        <ul class="method-list">
+          <li><b>Observed facts</b><span>Directly supported by official event records, match results, skills records, notebooks or footage.</span></li>
+          <li><b>Analysis</b><span>Interpretation derived from observed evidence. It will be labelled as analysis, not fact.</span></li>
+          <li><b>Unknown</b><span>Not yet verified. Unknown values are never silently converted to zero.</span></li>
+          <li><b>Reliability score</b><span>Measures evidence coverage and quality for a team profile, not the team's ability.</span></li>
+        </ul>
+        <h3>Match impact</h3>
+        <p>Any match-impact metric must publish its formula, component weights, sample size and source data. It will not be presented as an official VEX metric.</p>
+        <h3>Season boundary</h3>
+        <p>Only 2026 Override-season evidence is eligible for performance analysis. Older seasons may not be used to infer current robot capability.</p>
+        <h3>Last checked</h3><p>3 November 2026 · Pre-event snapshot. Data can change before competition day.</p>
+      </div>
+    </section>
+    <footer><span>1831M · TEAM MIKE</span><span>IN MIKE WE TRUST</span><span>INTERNAL SCOUTING RESOURCE</span></footer>
+  </main>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
