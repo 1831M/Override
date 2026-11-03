@@ -30,6 +30,13 @@
   const teamLookup = () => new Map((state.snapshot?.teams || []).map(team => [String(team.number),team]));
   const statLookup = () => new Map((state.snapshot?.stats || []).map(team => [String(team.number),team]));
   const divisionOptions = () => state.snapshot?.event?.divisions || [];
+  const divisionFeedComplete = key => {
+    const divisions = divisionOptions();
+    const available = state.snapshot?.sourceAvailability?.[key] || {};
+    return divisions.length > 0 && divisions.every(division =>
+      available[division.name || String(division.id)] === true
+    );
+  };
 
   function setConnection(kind, title, message) {
     const pill = $("#connection-pill");
@@ -157,14 +164,19 @@
     const completed = matches.filter(match => match.scored).length;
     const upcoming = matches.filter(match => !match.scored).length;
     const topSkill = (snapshot.skills || []).find(row => row.total != null);
-    $("#metric-teams").textContent = num(snapshot.teams.length);
-    $("#metric-teams-note").textContent = "Official event roster";
-    $("#metric-matches").textContent = num(completed);
-    $("#metric-matches-note").textContent = upcoming + " scheduled / not yet scored";
-    $("#metric-skills").textContent = topSkill ? num(topSkill.total) : "—";
-    $("#metric-skills-note").textContent = topSkill ? topSkill.team + " · best driver + programming" : "No complete skills total posted";
-    $("#metric-awards").textContent = num(snapshot.awards.length);
-    $("#metric-awards-note").textContent = "Official awards returned";
+    const availability = snapshot.sourceAvailability || {};
+    const teamsAvailable = availability.teams !== false;
+    const matchesAvailable = divisionFeedComplete("matches");
+    const skillsAvailable = availability.skills !== false;
+    const awardsAvailable = availability.awards !== false;
+    $("#metric-teams").textContent = teamsAvailable ? num(snapshot.teams.length) : "—";
+    $("#metric-teams-note").textContent = teamsAvailable ? "Official registered event roster" : "Team roster feed unavailable";
+    $("#metric-matches").textContent = matchesAvailable ? num(completed) : "—";
+    $("#metric-matches-note").textContent = matchesAvailable ? upcoming + " scheduled / not yet scored" : "One or more division feeds unavailable";
+    $("#metric-skills").textContent = skillsAvailable && topSkill ? num(topSkill.total) : "—";
+    $("#metric-skills-note").textContent = !skillsAvailable ? "VEX skills feed unavailable" : topSkill ? topSkill.team + " · best driver + programming" : "No complete skills total posted";
+    $("#metric-awards").textContent = awardsAvailable ? num(snapshot.awards.length) : "—";
+    $("#metric-awards-note").textContent = awardsAvailable ? "Official awards returned" : "VEX awards feed unavailable";
   }
 
   function scorePill(match) {
@@ -182,17 +194,17 @@
     const upcoming = unscored.slice(0,4);
     $("#up-next-list").innerHTML = upcoming.length ? upcoming.map(match =>
       '<div class="up-next-row"><div class="up-next-meta"><b>' + esc(match.name) + '</b><span>' + esc(match.division) + (match.field ? " · Field " + esc(match.field) : "") + '</span></div><div class="up-next-teams"><div class="alliance-red">' + allianceNames(match.redTeams) + '</div><div class="alliance-vs">VS</div><div class="alliance-blue">' + allianceNames(match.blueTeams) + '</div></div><div class="up-next-time">' + esc(dateTime(match.scheduled)) + '</div></div>'
-    ).join("") : '<div class="empty-state">' + ((snapshot.matches || []).length ? "All currently published matches have scores." : "The official match schedule has not been published yet.") + '</div>';
+    ).join("") : '<div class="empty-state">' + (divisionFeedComplete("matches") ? ((snapshot.matches || []).length ? "All currently published matches have scores." : "The official match schedule has not been published yet.") : "The match feed is unavailable for one or more divisions. No zero-filled schedule is shown.") + '</div>';
 
     const standings = (snapshot.rankings || []).slice(0,5);
     $("#top-rankings").innerHTML = standings.length ? standings.map(row =>
       '<div class="mini-rank-row"><span class="rank-number">' + num(row.rank) + '</span><b>' + esc(row.team) + '</b><span>' + esc([row.wins ?? "—",row.losses ?? "—",row.ties ?? "—"].join("–")) + '</span><strong>' + num(row.wp) + ' WP</strong></div>'
-    ).join("") : '<div class="empty-state">No published ranking rows yet.</div>';
+    ).join("") : '<div class="empty-state">' + (divisionFeedComplete("rankings") ? "No published ranking rows yet." : "The ranking feed is unavailable for one or more divisions.") + '</div>';
 
     const skills = (snapshot.skills || []).filter(row => row.total != null).slice(0,5);
     $("#top-skills").innerHTML = skills.length ? skills.map((row,index) =>
       '<div class="skill-leader-row"><span class="skill-rank">' + (index+1) + '</span><b>' + esc(row.team) + '</b><div class="skill-bar"><i style="width:' + Math.max(0,Math.min(100,(row.total/(skills[0].total || 1))*100)) + '%"></i></div><strong>' + num(row.total) + '</strong></div>'
-    ).join("") : '<div class="empty-state">No skills totals have been posted yet.</div>';
+    ).join("") : '<div class="empty-state">' + (snapshot.sourceAvailability?.skills === false ? "The VEX skills feed is unavailable." : "No skills totals have been posted yet.") + '</div>';
 
     renderActivity();
   }
@@ -247,7 +259,7 @@
     const rows = matches.map(match =>
       '<tr><td><b class="table-match-name">' + esc(match.name) + '</b><small>' + esc(match.roundLabel) + '</small></td><td>' + esc(match.division) + '<small>' + (match.field ? "Field " + esc(match.field) : "Field not listed") + '</small></td><td class="alliance-cell red-cell">' + allianceNames(match.redTeams) + '</td><td class="table-score">' + scorePill(match) + '</td><td class="alliance-cell blue-cell">' + allianceNames(match.blueTeams) + '</td><td>' + (match.scored ? '<span class="status-tag scored">Scored</span>' : '<span class="status-tag pending">Pending</span>') + '</td></tr>'
     ).join("");
-    $("#match-table").innerHTML = rows || '<tr><td colspan="6" class="table-empty">No matches match these filters.</td></tr>';
+    $("#match-table").innerHTML = rows || '<tr><td colspan="6" class="table-empty">' + (divisionFeedComplete("matches") ? "No matches match these filters." : "Match results are unavailable from one or more VEX division feeds. This is not a zero-score result.") + '</td></tr>';
   }
 
   function renderRankings() {
@@ -259,10 +271,15 @@
     );
     $("#ranking-table").innerHTML = rows.map(row =>
       '<tr><td><span class="rank-number">' + num(row.rank) + '</span></td><td><b class="table-team">' + esc(row.team) + '</b><small>' + esc(row.division) + '</small></td><td>' + esc([row.wins ?? "—",row.losses ?? "—",row.ties ?? "—"].join("–")) + '</td><td>' + num(row.wp) + '</td><td>' + num(row.ap) + '</td><td>' + num(row.sp) + '</td><td>' + num(row.averagePoints) + '</td><td>' + num(row.highScore) + '</td></tr>'
-    ).join("") || '<tr><td colspan="8" class="table-empty">No published rankings match this filter.</td></tr>';
+    ).join("") || '<tr><td colspan="8" class="table-empty">' + (divisionFeedComplete("rankings") ? "No published rankings match this filter." : "Rankings are unavailable from one or more VEX division feeds. No ranking is inferred.") + '</td></tr>';
   }
 
   function renderTeams() {
+    if (state.snapshot?.sourceAvailability?.teams === false) {
+      $("#team-count").textContent = "Roster unavailable";
+      $("#team-grid").innerHTML = '<div class="empty-state">The official VEX team roster could not be loaded. This does not mean the event has zero registered teams.</div>';
+      return;
+    }
     const search = $("#team-search").value.trim().toLowerCase();
     const school = $("#school-filter").value;
     let teams = state.snapshot?.teams || [];
@@ -287,11 +304,15 @@
 
   function renderSkills() {
     const board = state.snapshot?.skills || [];
-    $("#skills-table").innerHTML = board.length ? board.map((row,index) =>
+    $("#skills-table").innerHTML = state.snapshot?.sourceAvailability?.skills === false
+      ? '<div class="empty-state">The VEX skills feed is unavailable. No scores have been inferred.</div>'
+      : board.length ? board.map((row,index) =>
       '<div class="skills-row"><span class="rank-number">' + (index+1) + '</span><b>' + esc(row.team) + '<small>' + esc(row.name || "Team") + '</small></b><span>' + num(row.driver) + '<small>Driver</small></span><span>' + num(row.programming) + '<small>Programming</small></span><strong>' + num(row.total) + '<small>Total</small></strong></div>'
     ).join("") : '<div class="empty-state">No skills scores have been posted. That is different from a zero score.</div>';
     const awards = state.snapshot?.awards || [];
-    $("#awards-list").innerHTML = awards.length ? awards.map(award =>
+    $("#awards-list").innerHTML = state.snapshot?.sourceAvailability?.awards === false
+      ? '<div class="empty-state">The VEX awards feed is unavailable. No awards have been inferred.</div>'
+      : awards.length ? awards.map(award =>
       '<div class="award-row"><span class="award-icon">✦</span><div><b>' + esc(award.title) + '</b><small>' + esc([award.classification,award.designation].filter(Boolean).join(" · ") || "Official event award") + '</small><small>' + esc((award.teams || []).join(", ") || (award.individuals || []).join(", ") || "Winner details pending") + '</small></div></div>'
     ).join("") : '<div class="empty-state">No awards have been posted by VEX yet.</div>';
   }
