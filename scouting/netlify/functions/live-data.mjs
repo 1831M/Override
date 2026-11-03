@@ -3,12 +3,9 @@ import { createSnapshotLoader } from "./lib/fetch-snapshot.mjs";
 
 const EVENT_SKU = "VE-V5-26-66512";
 const SNAPSHOT_TTL_MS = 20_000;
-const HISTORY_TTL_MS = 10 * 60_000;
 
 let cachedSnapshot = null;
 let cachedAt = 0;
-let historyCache = null;
-let historyCachedAt = 0;
 let inFlight = null;
 
 const json = (body, status = 200) => Response.json(body, {
