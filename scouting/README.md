@@ -53,7 +53,7 @@ npm run check
 npm run build
 ```
 
-Unit tests cover match scoring vs unscored fixtures, alliance-level metrics, and best-run skills aggregation.
+Unit tests cover match scoring vs unscored fixtures, alliance-level metrics, best-run skills aggregation, event and division API aggregation, partial source failures, season-history gaps, unknown event handling, and history caching. UI smoke checks verify all 81 direct interface selectors, navigation targets, responsive styling, reduced-motion support, the server-only token boundary, and the refresh interval.
 
 ## Deployment
 
