@@ -1,71 +1,426 @@
-const data = window.SCOUTING_DATA;
-const $ = s => document.querySelector(s);
-const eventById = Object.fromEntries(data.sources.map(s => [s.id, s]));
-const schools = [...new Set(data.teams.map(t => t.school))];
-const verifiedTeams = data.teams.filter(t => t.events.length > 0);
-const appearances = data.teams.reduce((n, t) => n + t.events.length, 0);
+(() => {
+  "use strict";
 
-// Evidence coverage only, not a measure of robot strength.
-function reliability(t) {
-  const hasSkills = t.events.some(e => e.skills !== undefined);
-  return Math.min(10, 1 + Math.min(2, t.events.length) * 1.5 + (hasSkills ? 1 : 0) + (t.footage ? 2 : 0) + (t.notebook ? 2 : 0) + (t.independentConfirmation ? 1 : 0));
-}
-$("#summary").innerHTML = [
-  [data.teams.length, "REGISTERED TEAMS"],
-  [schools.length, "SCHOOLS / PROGRAMMES"],
-  [verifiedTeams.length + "/24", "WITH EVENT RESULT DATA"],
-  [appearances, "RESULTS RECORDS LOGGED"]
-].map(([v, l]) => '<div class="stat"><strong>' + v + '</strong><span>' + l + '</span></div>').join("");
+  const $ = selector => document.querySelector(selector);
+  const state = {
+    snapshot:null, previous:null, live:false, stale:false,
+    busy:false, matchFilter:"all", archive:false
+  };
+  const legacy = window.SCOUTING_DATA || null;
+  const LIVE_ENDPOINT = "/.netlify/functions/live-data";
+  const POLL_MS = 60_000;
 
-$("#school-bars").innerHTML = schools.map(s => {
-  const n = data.teams.filter(t => t.school === s).length;
-  return '<div class="school-row"><span>' + s + '</span><div class="bar"><i style="width:' + (n / data.teams.length * 100) + '%"></i></div><b>' + n + '</b></div>';
-}).join("");
+  const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[char]);
+  const num = value => value == null || !Number.isFinite(Number(value)) ? "—" : Number(value).toLocaleString("en-AU");
+  const signed = value => value == null || !Number.isFinite(Number(value)) ? "—" : (Number(value) > 0 ? "+" : "") + Number(value).toFixed(1);
+  const dateTime = value => {
+    if (!value) return "Not published";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "Not published" : date.toLocaleString("en-AU",{day:"numeric",month:"short",hour:"numeric",minute:"2-digit"});
+  };
+  const dateOnly = value => {
+    if (!value) return "Date TBC";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "Date TBC" : date.toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});
+  };
+  const teamName = team => [team.team_name,team.organization].filter(Boolean).join(" · ") || "Organisation not listed";
+  const resultRecord = row => [row.wins ?? 0,row.losses ?? 0,row.ties ?? 0].join("–");
+  const teamLookup = () => new Map((state.snapshot?.teams || []).map(team => [String(team.number),team]));
+  const statLookup = () => new Map((state.snapshot?.stats || []).map(team => [String(team.number),team]));
+  const divisionOptions = () => state.snapshot?.event?.divisions || [];
 
-const septAlliance = data.teams.flatMap(t => t.events.filter(e => e.event === "knox-sep27" && e.qualAlliance).map(e => ({id:t.id,diff:e.qualAlliance.diffAvg}))).sort((a,b)=>b.diff-a.diff).slice(0,10);
-const maxDiff = Math.max(...septAlliance.map(x=>Math.abs(x.diff)),1);
-$("#alliance-diff-bars").innerHTML = septAlliance.map(x => '<div class="diff-row"><b>'+x.id+'</b><div class="diff-track"><i class="'+(x.diff>=0?'positive':'negative')+'" style="width:'+(Math.abs(x.diff)/maxDiff*100)+'%"></i></div><span>'+(x.diff>0?'+':'')+x.diff.toFixed(1)+'</span></div>').join("");
+  function setConnection(kind, title, message) {
+    const pill = $("#connection-pill");
+    pill.className = "connection-pill " + kind;
+    $("#connection-label").textContent = kind === "live" ? "VEX feed live" : kind === "stale" ? "Showing cached data" : kind === "error" ? "Feed needs setup" : "Checking VEX feed";
+    $("#status-title").textContent = title;
+    $("#status-message").textContent = message;
+    $("#status-icon").textContent = kind === "live" ? "✓" : kind === "stale" ? "↻" : kind === "error" ? "!" : "↻";
+  }
 
-$(".coverage-number").innerHTML = verifiedTeams.length + '<span>/24</span>';
-$(".coverage p").textContent = "teams with at least one event-result record in the two reviewed third-party summaries";
-$(".progress i").style.width = (verifiedTeams.length / data.teams.length * 100) + "%";
+  function showAlert(message, type) {
+    const alert = $("#data-alert");
+    alert.className = "alert " + (type || "info");
+    alert.textContent = message;
+  }
+  function hideAlert() {
+    $("#data-alert").classList.add("hidden");
+    $("#data-alert").textContent = "";
+  }
 
-const bestRecord = t => t.events.length ? t.events.slice().sort((a, b) => {
-  const [aw, al] = a.record.split("-").map(Number);
-  const [bw, bl] = b.record.split("-").map(Number);
-  return bw / (bw + bl) - aw / (aw + al);
-})[0] : null;
+  function saveSnapshot(snapshot) {
+    try {
+      localStorage.setItem("1831m-override-live-v1", JSON.stringify({savedAt:new Date().toISOString(),snapshot}));
+    } catch {}
+  }
+  function loadSnapshot() {
+    try {
+      const raw = localStorage.getItem("1831m-override-live-v1");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && parsed.snapshot ? parsed : null;
+    } catch { return null; }
+  }
 
-$("#priority-table").innerHTML = data.teams.slice().sort((a, b) => reliability(b) - reliability(a)).slice(0, 10).map(t => {
-  const e = bestRecord(t);
-  return '<tr><td class="team-code">' + t.id + '</td><td>' + t.school + '</td><td>' + (e ? e.record + ' · ' + eventById[e.event].date : 'NOT VERIFIED') + '</td><td>' + t.style + '</td><td>' + reliability(t).toFixed(1) + '/10</td></tr>';
-}).join("");
+  function applySnapshot(snapshot, options = {}) {
+    state.previous = state.snapshot;
+    state.snapshot = snapshot;
+    state.live = options.live === true;
+    state.stale = options.stale === true;
+    $("#last-updated").textContent = dateTime(snapshot.fetchedAt);
+    $("#official-event-link").href = snapshot.event.eventUrl;
+    $("#hero-event-link").href = snapshot.event.eventUrl;
+    $("#source-event-link").href = snapshot.event.eventUrl;
+    $("#event-code").textContent = snapshot.event.sku || "VEX EVENT";
+    $("#overview-caption").textContent = snapshot.event.ongoing ? "Competition in progress" : "Official event feed connected";
+    if (options.stale) {
+      setConnection("stale","VEX Events is temporarily unavailable","Showing the last successful official snapshot. The displayed timestamp is the original update time.");
+    } else if (options.live) {
+      setConnection("live",snapshot.event.ongoing ? "Competition feed connected" : "Official event feed connected","VEX Events data is being checked every 60 seconds while this page is open.");
+    } else {
+      setConnection("stale","Showing a saved official snapshot","Reconnect to VEX Events to check for new scores and rankings.");
+    }
+    const missing = (snapshot.sourceErrors || []).length;
+    const unchecked = snapshot.seasonHistory?.uncheckedTeams?.length || 0;
+    if (missing || unchecked) {
+      showAlert(
+        (missing ? missing + " VEX data source section(s) could not be read. " : "") +
+        (unchecked ? "Season history was not checked successfully for " + unchecked + " team(s). These gaps are unknown, not zero." : ""),
+        "warning"
+      );
+    } else hideAlert();
+    renderAll();
+  }
 
-$("#school-filter").innerHTML += schools.slice().sort().map(s => '<option>' + s + '</option>').join("");
+  async function refresh(force = false) {
+    if (state.busy) return;
+    state.busy = true;
+    const button = $("#refresh-button");
+    button.classList.add("is-loading");
+    button.disabled = true;
+    if (!state.snapshot) setConnection("waiting","Connecting to VEX Events","Loading the official event record.");
+    try {
+      const url = LIVE_ENDPOINT + (force ? "?force=1" : "");
+      const response = await fetch(url,{method:"GET",cache:"no-store",headers:{"Accept":"application/json"}});
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.ok !== true || !payload.snapshot) {
+        const error = new Error(payload.message || "The live data endpoint returned an error.");
+        error.code = payload.code || "FEED_ERROR";
+        error.status = response.status;
+        throw error;
+      }
+      applySnapshot(payload.snapshot,{live:!payload.stale,stale:payload.stale === true});
+      if (payload.stale) showAlert(payload.warning || "The VEX feed is temporarily unavailable. Cached data is being shown.","warning");
+      saveSnapshot(payload.snapshot);
+    } catch (error) {
+      const cached = loadSnapshot();
+      if (!state.snapshot && cached?.snapshot) applySnapshot(cached.snapshot,{stale:true});
+      if (error.code === "TOKEN_REQUIRED") {
+        setConnection("error","Live VEX feed needs its API token","The site is ready, but VEX_EVENTS_TOKEN has not been added to Netlify yet.");
+        showAlert("Live competition data is not connected. Add VEX_EVENTS_TOKEN to the Netlify project as a secret environment variable with Functions scope. Do not put the token in this website or share it in chat.","warning");
+      } else if (error.code === "VEX_AUTH_FAILED") {
+        setConnection("error","VEX Events rejected the token","Check the server-side VEX_EVENTS_TOKEN setting and its validity.");
+        showAlert("The live API token was rejected by VEX Events. The last saved snapshot, if available, remains labelled as cached.","warning");
+      } else if (error.code === "EVENT_NOT_FOUND") {
+        setConnection("error","Event not found in VEX Events","The configured event SKU did not resolve. The event code needs checking.");
+        showAlert("The configured event SKU was not found in the official VEX API. No substitute data has been presented.","warning");
+      } else {
+        setConnection(state.snapshot ? "stale" : "error",state.snapshot ? "Could not refresh VEX Events" : "Could not connect to VEX Events",error.message || "Check the source connection and try again.");
+        if (state.snapshot) showAlert("The last successful snapshot is still shown. Its timestamp has not been changed.","warning");
+        else showAlert("No live VEX data is available yet. The page will keep retrying automatically.","warning");
+        if (legacy && !state.snapshot) renderLegacyPreview();
+      }
+    } finally {
+      state.busy = false;
+      button.classList.remove("is-loading");
+      button.disabled = false;
+    }
+  }
 
-function renderTeams() {
-  const q = $("#search").value.toLowerCase(), school = $("#school-filter").value;
-  const rows = data.teams.filter(t => (!school || t.school === school) && (t.id.toLowerCase().includes(q) || t.school.toLowerCase().includes(q)));
-  $("#team-grid").innerHTML = rows.map(t => {
-    const records = t.events.map(e => {
-      const ev = eventById[e.event];
-      return '<div class="record-row"><b>' + ev.date + '</b><span>' + e.record + '</span><span>Rank #' + e.rank + '</span></div><div class="record-metrics">AP ' + e.ap + ' · SP ' + e.sp + ' · VP ' + e.vp + (e.skills !== undefined ? ' · Skills ' + e.skills + ' (D ' + e.driver + ' / A ' + e.auton + ')' : '') + (e.qualAlliance ? '<br>Alliance avg: ' + e.qualAlliance.forAvg + ' for / ' + e.qualAlliance.againstAvg + ' against · Δ ' + (e.qualAlliance.diffAvg > 0 ? '+' : '') + e.qualAlliance.diffAvg : '') + '</div>';
-    }).join("");
-    const skill = t.events.find(e => e.skills !== undefined);
-    return '<article class="team-card"><h3>' + t.id + '</h3><p>' + t.school + '</p><div class="team-records">' + (records || '<div class="record-empty">No results record verified in reviewed sources</div>') + '</div><div class="card-bottom"><span class="tag">' + t.events.length + ' EVENT RECORD' + (t.events.length === 1 ? '' : 'S') + '</span><span class="muted">Evidence ' + reliability(t).toFixed(1) + '/10</span></div></article>';
-  }).join("") || '<p class="muted">No matching teams.</p>';
-}
-$("#search").addEventListener("input", renderTeams);
-$("#school-filter").addEventListener("change", renderTeams);
-renderTeams();
+  function renderAll() {
+    if (!state.snapshot) return;
+    renderSummary();
+    renderOverview();
+    renderDivisionFilters();
+    renderMatches();
+    renderRankings();
+    renderTeams();
+    renderSkills();
+    renderSources();
+  }
 
-document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
-  document.querySelectorAll(".tab,.view").forEach(x => x.classList.remove("active"));
-  b.classList.add("active");
-  $("#" + b.dataset.view).classList.add("active");
-}));
+  function renderSummary() {
+    const snapshot = state.snapshot;
+    const matches = snapshot.matches || [];
+    const completed = matches.filter(match => match.scored).length;
+    const upcoming = matches.filter(match => !match.scored).length;
+    const topSkill = (snapshot.skills || []).find(row => row.total != null);
+    $("#metric-teams").textContent = num(snapshot.teams.length);
+    $("#metric-teams-note").textContent = "Official event roster";
+    $("#metric-matches").textContent = num(completed);
+    $("#metric-matches-note").textContent = upcoming + " scheduled / not yet scored";
+    $("#metric-skills").textContent = topSkill ? num(topSkill.total) : "—";
+    $("#metric-skills-note").textContent = topSkill ? topSkill.team + " · best driver + programming" : "No complete skills total posted";
+    $("#metric-awards").textContent = num(snapshot.awards.length);
+    $("#metric-awards-note").textContent = "Official awards returned";
+  }
 
-const sourceList = document.createElement("div");
-sourceList.className = "source-list";
-sourceList.innerHTML = data.sources.map(s => '<p><b>' + s.date + ' · ' + s.format + '</b> — <a href="' + s.url + '" target="_blank" rel="noopener">' + s.name + '</a><br><span>' + s.note + '</span></p>').join("");
-$("#evidence .panel").append(sourceList);
+  function scorePill(match) {
+    if (!match.scored) return '<span class="score-pending">Not scored</span>';
+    return '<span class="score-final">' + num(match.redScore) + ' <i>:</i> ' + num(match.blueScore) + '</span>';
+  }
+  function allianceNames(numbers) {
+    if (!numbers || !numbers.length) return '<span class="team-muted">Teams pending</span>';
+    return numbers.map(number => '<b>' + esc(number) + '</b>').join('<span class="alliance-sep">·</span>');
+  }
+
+  function renderOverview() {
+    const snapshot = state.snapshot;
+    const unscored = (snapshot.matches || []).filter(match => !match.scored);
+    const upcoming = unscored.slice(0,4);
+    $("#up-next-list").innerHTML = upcoming.length ? upcoming.map(match =>
+      '<div class="up-next-row"><div class="up-next-meta"><b>' + esc(match.name) + '</b><span>' + esc(match.division) + (match.field ? " · Field " + esc(match.field) : "") + '</span></div><div class="up-next-teams"><div class="alliance-red">' + allianceNames(match.redTeams) + '</div><div class="alliance-vs">VS</div><div class="alliance-blue">' + allianceNames(match.blueTeams) + '</div></div><div class="up-next-time">' + esc(dateTime(match.scheduled)) + '</div></div>'
+    ).join("") : '<div class="empty-state">' + ((snapshot.matches || []).length ? "All currently published matches have scores." : "The official match schedule has not been published yet.") + '</div>';
+
+    const standings = (snapshot.rankings || []).slice(0,5);
+    $("#top-rankings").innerHTML = standings.length ? standings.map(row =>
+      '<div class="mini-rank-row"><span class="rank-number">' + num(row.rank) + '</span><b>' + esc(row.team) + '</b><span>' + esc([row.wins ?? "—",row.losses ?? "—",row.ties ?? "—"].join("–")) + '</span><strong>' + num(row.wp) + ' WP</strong></div>'
+    ).join("") : '<div class="empty-state">No published ranking rows yet.</div>';
+
+    const skills = (snapshot.skills || []).filter(row => row.total != null).slice(0,5);
+    $("#top-skills").innerHTML = skills.length ? skills.map((row,index) =>
+      '<div class="skill-leader-row"><span class="skill-rank">' + (index+1) + '</span><b>' + esc(row.team) + '</b><div class="skill-bar"><i style="width:' + Math.max(0,Math.min(100,(row.total/(skills[0].total || 1))*100)) + '%"></i></div><strong>' + num(row.total) + '</strong></div>'
+    ).join("") : '<div class="empty-state">No skills totals have been posted yet.</div>';
+
+    renderActivity();
+  }
+
+  function renderActivity() {
+    const snapshot = state.snapshot;
+    const previous = state.previous;
+    const entries = [];
+    if (previous) {
+      const previousMatches = new Map((previous.matches || []).map(match => [String(match.id),match]));
+      for (const match of snapshot.matches || []) {
+        const prior = previousMatches.get(String(match.id));
+        if (match.scored && (!prior || !prior.scored || prior.redScore !== match.redScore || prior.blueScore !== match.blueScore)) {
+          entries.push({icon:"✓",title:match.name + " result posted",detail:match.redScore + "–" + match.blueScore + " · " + match.division,time:match.scheduled});
+        }
+      }
+      const oldRanks = new Map((previous.rankings || []).map(row => [row.team + "|" + row.division,row.rank]));
+      for (const row of snapshot.rankings || []) {
+        if (oldRanks.has(row.team + "|" + row.division) && oldRanks.get(row.team + "|" + row.division) !== row.rank) {
+          entries.push({icon:"↗",title:row.team + " ranking updated",detail:"Now #" + row.rank + " in " + row.division,time:null});
+        }
+      }
+      const oldAwards = new Set((previous.awards || []).map(row => row.id || row.title));
+      for (const award of snapshot.awards || []) {
+        if (!oldAwards.has(award.id || award.title)) entries.push({icon:"✦",title:"Award added: " + award.title,detail:(award.teams || []).join(", ") || "Winner information pending",time:null});
+      }
+    }
+    if (!entries.length) {
+      const latest = (snapshot.matches || []).filter(match => match.scored).slice(-4).reverse();
+      latest.forEach(match => entries.push({icon:"✓",title:match.name + " official result",detail:match.redScore + "–" + match.blueScore + " · " + match.division,time:match.scheduled}));
+    }
+    const visible = entries.slice(0,6);
+    $("#activity-feed").innerHTML = visible.length ? visible.map(item =>
+      '<div class="activity-row"><span class="activity-icon">' + esc(item.icon) + '</span><div><b>' + esc(item.title) + '</b><small>' + esc(item.detail) + '</small></div><time>' + esc(item.time ? dateTime(item.time) : "Just synced") + '</time></div>'
+    ).join("") : '<div class="empty-state">The VEX feed is connected. No new result changes since the last refresh.</div>';
+  }
+
+  function renderDivisionFilters() {
+    const divisions = divisionOptions();
+    const build = current => '<option value="">All divisions</option>' + divisions.map(division =>
+      '<option value="' + esc(division.name || "") + '"' + (current === division.name ? " selected" : "") + '>' + esc(division.name || "Division") + '</option>'
+    ).join("");
+    $("#division-filter").innerHTML = build($("#division-filter").value);
+    $("#ranking-division").innerHTML = build($("#ranking-division").value);
+  }
+
+  function renderMatches() {
+    const division = $("#division-filter").value;
+    let matches = (state.snapshot?.matches || []).filter(match => !division || match.division === division);
+    if (state.matchFilter === "upcoming") matches = matches.filter(match => !match.scored);
+    if (state.matchFilter === "scored") matches = matches.filter(match => match.scored);
+    const rows = matches.map(match =>
+      '<tr><td><b class="table-match-name">' + esc(match.name) + '</b><small>' + esc(match.roundLabel) + '</small></td><td>' + esc(match.division) + '<small>' + (match.field ? "Field " + esc(match.field) : "Field not listed") + '</small></td><td class="alliance-cell red-cell">' + allianceNames(match.redTeams) + '</td><td class="table-score">' + scorePill(match) + '</td><td class="alliance-cell blue-cell">' + allianceNames(match.blueTeams) + '</td><td>' + (match.scored ? '<span class="status-tag scored">Scored</span>' : '<span class="status-tag pending">Pending</span>') + '</td></tr>'
+    ).join("");
+    $("#match-table").innerHTML = rows || '<tr><td colspan="6" class="table-empty">No matches match these filters.</td></tr>';
+  }
+
+  function renderRankings() {
+    const search = $("#ranking-search").value.trim().toLowerCase();
+    const division = $("#ranking-division").value;
+    const rows = (state.snapshot?.rankings || []).filter(row =>
+      (!division || row.division === division) &&
+      (!search || String(row.team).toLowerCase().includes(search))
+    );
+    $("#ranking-table").innerHTML = rows.map(row =>
+      '<tr><td><span class="rank-number">' + num(row.rank) + '</span></td><td><b class="table-team">' + esc(row.team) + '</b><small>' + esc(row.division) + '</small></td><td>' + esc([row.wins ?? "—",row.losses ?? "—",row.ties ?? "—"].join("–")) + '</td><td>' + num(row.wp) + '</td><td>' + num(row.ap) + '</td><td>' + num(row.sp) + '</td><td>' + num(row.averagePoints) + '</td><td>' + num(row.highScore) + '</td></tr>'
+    ).join("") || '<tr><td colspan="8" class="table-empty">No published rankings match this filter.</td></tr>';
+  }
+
+  function renderTeams() {
+    const search = $("#team-search").value.trim().toLowerCase();
+    const school = $("#school-filter").value;
+    let teams = state.snapshot?.teams || [];
+    const schools = [...new Set(teams.map(team => team.organization).filter(Boolean))].sort();
+    const currentSchool = school;
+    $("#school-filter").innerHTML = '<option value="">All organisations</option>' + schools.map(name =>
+      '<option value="' + esc(name) + '"' + (name === currentSchool ? " selected" : "") + '>' + esc(name) + '</option>'
+    ).join("");
+    const stats = statLookup();
+    const filtered = teams.filter(team =>
+      (!school || team.organization === school) &&
+      (!search || [team.number,team.team_name,team.organization].join(" ").toLowerCase().includes(search))
+    );
+    $("#team-count").textContent = filtered.length + " of " + teams.length + " teams";
+    $("#team-grid").innerHTML = filtered.map(team => {
+      const row = stats.get(String(team.number)) || {};
+      const statline = row.rank != null ? "Rank #" + row.rank : row.scoredMatches ? resultRecord(row) : "No scored match stats yet";
+      const historyCount = (row.eventHistory || []).length;
+      return '<button type="button" class="team-card" data-team="' + esc(team.number) + '"><span class="team-card-top"><span class="team-code">' + esc(team.number) + '</span><span class="team-arrow">↗</span></span><b class="team-school">' + esc(teamName(team)) + '</b><span class="team-card-bottom"><span>' + esc(statline) + '</span><span>' + historyCount + ' season event' + (historyCount === 1 ? "" : "s") + '</span></span></button>';
+    }).join("") || '<div class="empty-state">No teams match your search.</div>';
+  }
+
+  function renderSkills() {
+    const board = state.snapshot?.skills || [];
+    $("#skills-table").innerHTML = board.length ? board.map((row,index) =>
+      '<div class="skills-row"><span class="rank-number">' + (index+1) + '</span><b>' + esc(row.team) + '<small>' + esc(row.name || "Team") + '</small></b><span>' + num(row.driver) + '<small>Driver</small></span><span>' + num(row.programming) + '<small>Programming</small></span><strong>' + num(row.total) + '<small>Total</small></strong></div>'
+    ).join("") : '<div class="empty-state">No skills scores have been posted. That is different from a zero score.</div>';
+    const awards = state.snapshot?.awards || [];
+    $("#awards-list").innerHTML = awards.length ? awards.map(award =>
+      '<div class="award-row"><span class="award-icon">✦</span><div><b>' + esc(award.title) + '</b><small>' + esc([award.classification,award.designation].filter(Boolean).join(" · ") || "Official event award") + '</small><small>' + esc((award.teams || []).join(", ") || (award.individuals || []).join(", ") || "Winner details pending") + '</small></div></div>'
+    ).join("") : '<div class="empty-state">No awards have been posted by VEX yet.</div>';
+  }
+
+  function renderSources() {
+    const sources = legacy?.sources || [];
+    $("#archive-sources").innerHTML = sources.length ? sources.map(source =>
+      '<a href="' + esc(source.url) + '" target="_blank" rel="noopener"><b>' + esc(source.name) + '</b><small>' + esc(source.date) + ' · third-party archive</small></a>'
+    ).join("") : '<span class="muted">No legacy archive links available.</span>';
+    const snapshot = state.snapshot;
+    if (!snapshot) {
+      $("#source-health").textContent = "Live source has not been connected yet.";
+      return;
+    }
+    const history = snapshot.seasonHistory || {};
+    $("#source-health").textContent =
+      "Last successful pull: " + dateTime(snapshot.fetchedAt) +
+      " · VEX teams: " + snapshot.teams.length +
+      " · matches: " + snapshot.matches.length +
+      " · season-history checks: " + (history.checkedTeams || 0) + "/" + (history.totalTeams || 0) +
+      " · source warnings: " + (snapshot.sourceErrors || []).length + ".";
+  }
+
+  function renderLegacyPreview() {
+    if (!legacy) return;
+    const oldTeams = legacy.teams || [];
+    $("#metric-teams").textContent = num(oldTeams.length);
+    $("#metric-teams-note").textContent = "Saved roster notes · not live verified";
+    $("#metric-matches").textContent = "—";
+    $("#metric-matches-note").textContent = "Waiting for official match feed";
+    $("#metric-skills").textContent = "—";
+    $("#metric-skills-note").textContent = "Waiting for official skills feed";
+    $("#metric-awards").textContent = "—";
+    $("#metric-awards-note").textContent = "Waiting for official awards";
+    $("#team-count").textContent = oldTeams.length + " saved roster notes";
+    $("#team-grid").innerHTML = oldTeams.map(team =>
+      '<article class="team-card legacy-card"><span class="team-card-top"><span class="team-code">' + esc(team.id) + '</span><span class="legacy-tag">ARCHIVE</span></span><b class="team-school">' + esc(team.school) + '</b><span class="team-card-bottom"><span>Past result notes only</span><span>Unverified live</span></span></article>'
+    ).join("");
+    $("#up-next-list").innerHTML = '<div class="empty-state">The official VEX feed is not connected, so no live fixtures are shown.</div>';
+    $("#top-rankings").innerHTML = '<div class="empty-state">Waiting for VEX rankings.</div>';
+    $("#top-skills").innerHTML = '<div class="empty-state">Waiting for VEX skills scores.</div>';
+    $("#match-table").innerHTML = '<tr><td colspan="6" class="table-empty">Live data not connected.</td></tr>';
+    $("#ranking-table").innerHTML = '<tr><td colspan="8" class="table-empty">Live data not connected.</td></tr>';
+    $("#skills-table").innerHTML = '<div class="empty-state">Live skills data not connected.</div>';
+    $("#awards-list").innerHTML = '<div class="empty-state">Live awards data not connected.</div>';
+    $("#overview-caption").textContent = "Saved roster preview · no live data";
+    renderSources();
+  }
+
+  function openTeam(number) {
+    const team = teamLookup().get(String(number));
+    const stat = statLookup().get(String(number));
+    if (!team) return;
+    const history = stat?.eventHistory || [];
+    const historyMarkup = history.length ? history.map(event =>
+      '<div class="history-row"><b>' + esc(dateOnly(event.start)) + '</b><span>' + esc(event.name) + '</span><a href="' + esc(event.url || "#") + '" target="_blank" rel="noopener">VEX ↗</a></div>'
+    ).join("") : state.snapshot.seasonHistory?.uncheckedTeams?.includes(String(number))
+      ? '<p class="dialog-muted">Season event history could not be checked for this team.</p>'
+      : '<p class="dialog-muted">No other current-season event appearances were returned by the VEX team history query.</p>';
+    $("#dialog-title").textContent = team.number + (team.team_name ? " · " + team.team_name : "");
+    $("#dialog-body").innerHTML =
+      '<p class="dialog-school">' + esc(team.organization || "Organisation not listed") + '</p>' +
+      '<div class="dialog-stats">' +
+      '<div><small>EVENT RANK</small><b>' + num(stat?.rank) + '</b></div>' +
+      '<div><small>W–L–T</small><b>' + esc(stat ? resultRecord(stat) : "—") + '</b></div>' +
+      '<div><small>WIN RATE</small><b>' + (stat?.winRate == null ? "—" : num(stat.winRate) + "%") + '</b></div>' +
+      '<div><small>SKILLS TOTAL</small><b>' + num(stat?.skillsTotal) + '</b></div>' +
+      '</div>' +
+      '<div class="dialog-section"><h3>Event match context</h3><div class="metric-pair"><span>Scored matches</span><b>' + num(stat?.scoredMatches) + '</b></div><div class="metric-pair"><span>Alliance points for / match</span><b>' + num(stat?.allianceForAvg) + '</b></div><div class="metric-pair"><span>Alliance points against / match</span><b>' + num(stat?.allianceAgainstAvg) + '</b></div><div class="metric-pair"><span>Alliance score differential</span><b>' + signed(stat?.allianceDiffAvg) + '</b></div><p class="dialog-muted">Alliance scores are shared scores. They describe the match context for the team, not this robot's individual point contribution.</p></div>' +
+      '<div class="dialog-section"><h3>Skills runs</h3><div class="metric-pair"><span>Best driver</span><b>' + num(stat?.driverSkills) + '</b></div><div class="metric-pair"><span>Best programming</span><b>' + num(stat?.programmingSkills) + '</b></div><div class="metric-pair"><span>Combined total</span><b>' + num(stat?.skillsTotal) + '</b></div></div>' +
+      '<div class="dialog-section"><h3>2026–27 season appearances</h3>' + historyMarkup + '</div>';
+    const dialog = $("#team-dialog");
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open","");
+  }
+
+  function setupControls() {
+    document.querySelectorAll(".nav-tab").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll(".nav-tab,.view").forEach(element => element.classList.remove("active"));
+      button.classList.add("active");
+      $("#" + button.dataset.view).classList.add("active");
+      window.scrollTo({top:document.querySelector(".section-nav").offsetTop - 12,behavior:"smooth"});
+    }));
+    document.querySelectorAll("[data-go]").forEach(button => button.addEventListener("click", () => {
+      const target = button.dataset.go;
+      const nav = document.querySelector('.nav-tab[data-view="' + target + '"]');
+      if (nav) nav.click();
+    }));
+    $("#refresh-button").addEventListener("click",() => refresh(true));
+    $("#match-filters").addEventListener("click",event => {
+      const button = event.target.closest("[data-filter]");
+      if (!button) return;
+      state.matchFilter = button.dataset.filter;
+      document.querySelectorAll(".filter-pill").forEach(pill => pill.classList.toggle("active",pill === button));
+      renderMatches();
+    });
+    $("#division-filter").addEventListener("change",renderMatches);
+    $("#ranking-division").addEventListener("change",renderRankings);
+    $("#ranking-search").addEventListener("input",renderRankings);
+    $("#team-search").addEventListener("input",renderTeams);
+    $("#school-filter").addEventListener("change",renderTeams);
+    $("#team-grid").addEventListener("click",event => {
+      const button = event.target.closest("[data-team]");
+      if (button) openTeam(button.dataset.team);
+    });
+    $("#dialog-close").addEventListener("click",() => $("#team-dialog").close());
+    $("#team-dialog").addEventListener("click",event => {
+      if (event.target === $("#team-dialog")) $("#team-dialog").close();
+    });
+  }
+
+  function boot() {
+    setupControls();
+    const cached = loadSnapshot();
+    if (cached?.snapshot) {
+      applySnapshot(cached.snapshot,{stale:true});
+      $("#status-message").textContent = "Showing a saved copy from " + dateTime(cached.snapshot.fetchedAt) + " while checking for updates.";
+    } else if (legacy) {
+      renderLegacyPreview();
+      setConnection("waiting","Waiting for the official feed","The saved roster preview is historical only; it is not being represented as live VEX data.");
+    }
+    refresh(false);
+    window.setInterval(() => {
+      if (document.visibilityState === "visible") refresh(false);
+    },POLL_MS);
+    document.addEventListener("visibilitychange",() => {
+      if (document.visibilityState === "visible") refresh(false);
+    });
+  }
+
+  boot();
+})();
