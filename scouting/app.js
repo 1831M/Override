@@ -281,7 +281,7 @@
     const body = $("#season-table");
     if (!body) return;
     if (!data?.metrics?.length) {
-      body.innerHTML = '<tr><td colspan="9" class="table-empty">No historical season baseline is available.</td></tr>';
+      body.innerHTML = '<tr><td colspan="10" class="table-empty">No historical season baseline is available.</td></tr>';
       return;
     }
     const search = ($("#season-search")?.value || "").trim().toLowerCase();
@@ -292,9 +292,20 @@
       (!search || row.team.toLowerCase().includes(search))
     ).sort((a,b) => sort === "team" ? a.team.localeCompare(b.team,undefined,{numeric:true}) : (Number(b[sort]) - Number(a[sort])));
     body.innerHTML = rows.map(row =>
-      '<tr><td><b class="table-team">' + esc(row.team) + '</b></td><td>' + row.w + '–' + row.l + '–' + row.t + '</td><td>' + num(row.win) + '%</td><td>' + num(row.forAvg) + '</td><td>' + num(row.againstAvg) + '</td><td>' + signed(row.margin) + '</td><td><b>' + signed(row.ccwm) + '</b></td><td><span class="confidence-tag ' + esc(row.confidence.toLowerCase()) + '">' + esc(row.confidence) + '</span></td><td><span class="tier-tag tier-' + esc(row.tier.toLowerCase()) + '">' + esc(row.tier) + '</span></td></tr>'
-    ).join("") || '<tr><td colspan="9" class="table-empty">No teams match these filters.</td></tr>';
+      '<tr><td><b class="table-team">' + esc(row.team) + '</b></td><td>' + row.w + '–' + row.l + '–' + row.t + '</td><td>' + (row.w + row.l + row.t) + '</td><td>' + num(row.win) + '%</td><td>' + num(row.forAvg) + '</td><td>' + num(row.againstAvg) + '</td><td>' + signed(row.margin) + '</td><td><b>' + signed(row.ccwm) + '</b></td><td><span class="confidence-tag ' + esc(row.confidence.toLowerCase()) + '">' + esc(row.confidence) + '</span></td><td><span class="tier-tag tier-' + esc(row.tier.toLowerCase()) + '">' + esc(row.tier) + '</span></td></tr>'
+    ).join("") || '<tr><td colspan="10" class="table-empty">No teams match these filters.</td></tr>';
     $("#season-count").textContent = rows.length + " of " + data.metrics.length + " teams · Source: " + data.source + " · Checked " + data.checked + ". " + data.note;
+    const renderBars = (target, key, formatter) => {
+      const top = [...data.metrics].sort((a,b) => b[key] - a[key]).slice(0,8);
+      const max = Math.max(1,...top.map(row => Math.abs(row[key])));
+      $(target).innerHTML = top.map(row => {
+        const value = Number(row[key]);
+        const width = Math.max(3,Math.abs(value) / max * 100);
+        return '<div class="season-bar-row"><b>' + esc(row.team) + '</b><div class="season-bar-track"><i class="' + (value < 0 ? 'negative' : 'positive') + '" style="width:' + width + '%"></i></div><strong>' + formatter(value) + '</strong></div>';
+      }).join("");
+    };
+    renderBars("#season-ccwm-chart","ccwm",signed);
+    renderBars("#season-margin-chart","margin",signed);
   }
 
   function renderTeams() {
