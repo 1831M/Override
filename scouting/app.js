@@ -381,6 +381,7 @@
     $("#ranking-table").innerHTML = '<tr><td colspan="8" class="table-empty">Live data not connected.</td></tr>';
     $("#skills-table").innerHTML = '<div class="empty-state">Live skills data not connected.</div>';
     $("#awards-list").innerHTML = '<div class="empty-state">Live awards data not connected.</div>';
+    renderSeasonSnapshot();
     $("#overview-caption").textContent = "Saved roster preview · no live data";
     renderSources();
   }
@@ -390,6 +391,10 @@
     const stat = statLookup().get(String(number));
     if (!team) return;
     const history = stat?.eventHistory || [];
+    const seasonRow = legacy?.seasonSnapshot?.metrics?.find(row => row.team === String(number));
+    const seasonContextMarkup = seasonRow
+      ? '<div class="dialog-section"><h3>Earlier-season scouting context</h3><div class="metric-pair"><span>Season record</span><b>' + seasonRow.w + "–" + seasonRow.l + "–" + seasonRow.t + '</b></div><div class="metric-pair"><span>Win rate</span><b>' + num(seasonRow.win) + '%</b></div><div class="metric-pair"><span>Average margin</span><b>' + signed(seasonRow.margin) + '</b></div><div class="metric-pair"><span>CCWM · third-party metric</span><b>' + signed(seasonRow.ccwm) + '</b></div><div class="metric-pair"><span>Threat tier / confidence</span><b>' + esc(seasonRow.tier) + " / " + esc(seasonRow.confidence) + '</b></div><p class="dialog-muted">VEX Tracker snapshot checked 2 Nov 2026. Historical preparation context only; not a current States result or official VEX ranking.</p></div>'
+      : '';
     const historyMarkup = history.length ? history.map(event =>
       '<div class="history-row"><b>' + esc(dateOnly(event.start)) + '</b><span>' + esc(event.name) + '</span><a href="' + esc(event.url || "#") + '" target="_blank" rel="noopener">VEX ↗</a></div>'
     ).join("") : state.snapshot.seasonHistory?.uncheckedTeams?.includes(String(number))
@@ -406,7 +411,7 @@
       '</div>' +
       '<div class="dialog-section"><h3>Event match context</h3><div class="metric-pair"><span>Scored matches</span><b>' + num(stat?.scoredMatches) + '</b></div><div class="metric-pair"><span>Alliance points for / match</span><b>' + num(stat?.allianceForAvg) + '</b></div><div class="metric-pair"><span>Alliance points against / match</span><b>' + num(stat?.allianceAgainstAvg) + '</b></div><div class="metric-pair"><span>Alliance score differential</span><b>' + signed(stat?.allianceDiffAvg) + '</b></div><p class="dialog-muted">Alliance scores are shared scores. They describe the match context for the team, not this robot&#39;s individual point contribution.</p></div>' +
       '<div class="dialog-section"><h3>Skills runs</h3><div class="metric-pair"><span>Best driver</span><b>' + num(stat?.driverSkills) + '</b></div><div class="metric-pair"><span>Best programming</span><b>' + num(stat?.programmingSkills) + '</b></div><div class="metric-pair"><span>Combined total</span><b>' + num(stat?.skillsTotal) + '</b></div></div>' +
-      '<div class="dialog-section"><h3>2026–27 season appearances</h3>' + historyMarkup + '</div>';
+      seasonContextMarkup + '<div class="dialog-section"><h3>2026–27 season appearances</h3>' + historyMarkup + '</div>';
     const dialog = $("#team-dialog");
     if (typeof dialog.showModal === "function") dialog.showModal();
     else dialog.setAttribute("open","");
