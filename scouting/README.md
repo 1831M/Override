@@ -1,33 +1,27 @@
-# 1831M States Scouting — 2026
+# 1831M States Scouting — 2026 Override
 
-Interactive scouting dashboard for the NSW V5 State Championships (Override), 8 November 2026.
+Standalone scouting dashboard for the NSW V5 States event.
 
-## Site structure
+## Netlify
 
-- `index.html` — dashboard interface
-- `data.js` — verified scouting data (unknown values remain explicitly unavailable)
-- `styles.css` — responsive styling
-- `app.js` — filters, comparisons and charts
-
-## Netlify connection
-
-The Netlify project is `1831m-states-scouting-2026`.
-
-To connect this subdirectory using Netlify Git continuous deployment:
-1. Open the Netlify project.
-2. Go to **Project configuration → Build & deploy → Continuous deployment** and connect the GitHub repository `1831M/Override`.
-3. Set the **base directory** to `scouting`.
-4. Leave the build command empty and set the publish directory to `.`.
-5. Save and trigger the first deploy.
-
-After that, commits under `scouting/` will trigger deploys. Files elsewhere in the repository will not be part of the published site.
-
-The GitHub/Netlify connections available to this assistant do not expose the repository-linking settings, so that one-time connection must be completed in the Netlify dashboard.
+The repository-root `netlify.toml` configures the Netlify base directory as `scouting` and publish directory as `.`. No build command is needed. Connect Netlify project `1831m-states-scouting-2026` to this repository on branch `main`. Only files inside `scouting/` are published.
 
 ## Evidence rules
 
-- Use only the 2026 Override season.
-- Do not turn missing values into zero.
-- Separate observed match data from scouting interpretation.
-- Show source, date checked and confidence for every important metric.
-- A reliability score measures evidence coverage, not team quality.
+- Use 2026 Override-season data only.
+- Unknown is not zero.
+- Date and cite every performance claim.
+- Separate official statistics, third-party event summaries, direct video observations and analyst estimates.
+- Document all rating calculations.
+- A team with no record in the sources reviewed is not assumed to have attended zero events.
+
+## Event
+
+- NSW | State Championships | VEX V5 Middle School
+- 2026 Override Tournament
+- 8 November 2026 — Knox Grammar School
+- Event code: VE-V5-26-66512
+
+## Current evidence coverage
+
+The dashboard currently contains the 24-team event roster and result summaries from two earlier 2026 Override events. Those summaries are third-party data and still require reconciliation against official VEX event records. Video, notebook, and detailed offence/defence reviews are not yet complete.
