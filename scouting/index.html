@@ -1,66 +1,145 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-AU">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#10151d">
-  <meta name="description" content="1831M scouting dashboard for the 2026 NSW V5 State Championships.">
-  <title>1831M | States Scouting 2026</title>
+  <meta name="theme-color" content="#f5f7f1">
+  <meta name="description" content="Live 1831M scouting dashboard for the 2026 NSW V5 States Override event.">
+  <title>Override Field Notes · 1831M</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#"><span class="mark">M</span><span>1831M <small>SCOUTING INTELLIGENCE</small></span></a>
-    <div class="event-meta"><span class="live-dot"></span> PRE-EVENT REPORT <b>04 NOV 2026</b></div>
+    <a class="brand" href="#" aria-label="1831M Override Field Notes home">
+      <span class="brand-mark">M</span>
+      <span class="brand-copy"><b>1831M <i>FIELD NOTES</i></b><small>VEX V5 · OVERRIDE 2026</small></span>
+    </a>
+    <div class="topbar-right">
+      <a class="event-link" id="official-event-link" href="https://events.vex.com/" target="_blank" rel="noopener">VEX event page <span aria-hidden="true">↗</span></a>
+      <span class="connection-pill waiting" id="connection-pill"><i></i><span id="connection-label">Checking VEX feed</span></span>
+      <button class="icon-button" id="refresh-button" type="button" aria-label="Refresh competition data" title="Refresh data">↻</button>
+    </div>
   </header>
-  <main>
+
+  <main class="page">
     <section class="hero">
-      <div class="eyebrow">NSW STATE CHAMPIONSHIPS · VEX V5 MIDDLE SCHOOL</div>
-      <h1>Override <span>2026</span></h1>
-      <p>Competitive intelligence for the 8 November championship at Knox Grammar School.</p>
-      <div class="hero-foot"><span>EVENT VE-V5-26-66512</span><span>24 REGISTERED TEAMS</span><span>4 DAYS TO EVENT</span></div>
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span> NSW STATE CHAMPIONSHIPS · MIDDLE SCHOOL</div>
+        <h1>Override <span>2026</span><span class="hero-scribble" aria-hidden="true">✳</span></h1>
+        <p class="hero-subtitle">The field, the form, the finals run. Everything worth knowing, in one place.</p>
+        <div class="hero-meta">
+          <span><b>08 NOV 2026</b> · KNOX GRAMMAR SCHOOL</span>
+          <span class="meta-divider"></span>
+          <span id="event-code">VE-V5-26-66512</span>
+        </div>
+        <div class="hero-actions">
+          <a class="primary-link" id="hero-event-link" href="https://events.vex.com/" target="_blank" rel="noopener">Open official event <span aria-hidden="true">↗</span></a>
+          <span class="auto-refresh-note"><span class="pulse-dot"></span> Auto-refreshes every 60 seconds</span>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="hero-disc"><span>1831</span><b>M</b></div>
+        <span class="art-star star-one">✳</span><span class="art-star star-two">✦</span>
+        <span class="art-label">IN MIKE<br>WE TRUST</span>
+      </div>
     </section>
-    <section class="stats" id="summary"></section>
-    <nav class="tabs" aria-label="Dashboard sections">
-      <button class="tab active" data-view="overview">Overview</button>
-      <button class="tab" data-view="teams">Team directory</button>
-      <button class="tab" data-view="evidence">Evidence & methodology</button>
+
+    <section class="status-strip" aria-live="polite">
+      <div class="status-main"><span class="status-icon" id="status-icon">↻</span><div><b id="status-title">Connecting to VEX Events</b><small id="status-message">Loading the official event record.</small></div></div>
+      <div class="status-updated"><small>LAST SUCCESSFUL UPDATE</small><b id="last-updated">Not yet synced</b></div>
+    </section>
+
+    <div class="alert hidden" id="data-alert" role="status"></div>
+    <section class="metric-grid" id="summary" aria-label="Event summary">
+      <article class="metric-card"><span class="metric-label">REGISTERED TEAMS</span><strong id="metric-teams">—</strong><small id="metric-teams-note">Awaiting VEX data</small><i class="metric-spark spark-mint"></i></article>
+      <article class="metric-card"><span class="metric-label">MATCHES COMPLETED</span><strong id="metric-matches">—</strong><small id="metric-matches-note">Live results</small><i class="metric-spark spark-coral"></i></article>
+      <article class="metric-card"><span class="metric-label">TOP SKILLS TOTAL</span><strong id="metric-skills">—</strong><small id="metric-skills-note">Best driver + programming</small><i class="metric-spark spark-yellow"></i></article>
+      <article class="metric-card"><span class="metric-label">AWARDS POSTED</span><strong id="metric-awards">—</strong><small id="metric-awards-note">Official event awards</small><i class="metric-spark spark-blue"></i></article>
+    </section>
+
+    <nav class="section-nav" aria-label="Dashboard sections">
+      <button class="nav-tab active" data-view="overview" type="button">Overview <span>01</span></button>
+      <button class="nav-tab" data-view="matches" type="button">Match centre <span>02</span></button>
+      <button class="nav-tab" data-view="rankings" type="button">Rankings <span>03</span></button>
+      <button class="nav-tab" data-view="teams" type="button">Team directory <span>04</span></button>
+      <button class="nav-tab" data-view="skills" type="button">Skills & awards <span>05</span></button>
+      <button class="nav-tab" data-view="sources" type="button">Sources & method <span>06</span></button>
     </nav>
-    <section id="overview" class="view active">
-      <div class="section-head"><div><div class="eyebrow">SCOUTING SNAPSHOT</div><h2>Field overview</h2></div><span class="muted">Evidence-led · Updated 4 Nov 2026</span></div>
-      <div class="notice"><strong>Data integrity mode</strong><p>Unverified performance figures are intentionally blank. Missing data is not treated as zero, and no team ranking is inferred from incomplete evidence.</p></div>
-      <div class="panel-grid">
-        <article class="panel"><div class="panel-title">Team distribution</div><div id="school-bars" class="school-bars"></div></article>
-        <article class="panel"><div class="panel-title">Scouting coverage</div><div class="coverage"><div class="coverage-number">0<span>/24</span></div><p>teams with at least one event-results record in reviewed sources</p><div class="progress"><i style="width:0%"></i></div><small>Coverage will rise as match, skills and notebook evidence is checked.</small></div></article>
-        <article class="panel"><div class="panel-title">Qualification alliance score differential · 27 Sep</div><div id="alliance-diff-bars" class="diff-bars"></div><small class="chart-note">Average alliance points for minus against across eight qualifiers. Alliance-level context, not an individual robot score.</small></article>
+
+    <section class="view active" id="overview">
+      <div class="section-heading"><div><span class="section-kicker">THE BIG PICTURE</span><h2>Competition at a glance</h2><p>Quick reads from the official event feed.</p></div><span class="live-caption" id="overview-caption">Waiting for live data</span></div>
+      <div class="overview-grid">
+        <article class="surface match-preview">
+          <div class="surface-heading"><div><span class="tiny-kicker">UP NEXT</span><h3>Match centre</h3></div><button class="text-button" data-go="matches" type="button">All matches ↗</button></div>
+          <div id="up-next-list" class="up-next-list"><div class="empty-state">The match schedule will appear when VEX publishes it.</div></div>
+        </article>
+        <article class="surface standings-preview">
+          <div class="surface-heading"><div><span class="tiny-kicker">THE LADDER</span><h3>Top rankings</h3></div><button class="text-button" data-go="rankings" type="button">Full table ↗</button></div>
+          <div id="top-rankings" class="mini-ranking"><div class="empty-state">Official rankings will appear here.</div></div>
+        </article>
+        <article class="surface skill-preview">
+          <div class="surface-heading"><div><span class="tiny-kicker">SKILLS RUNS</span><h3>Skill leaders</h3></div><button class="text-button" data-go="skills" type="button">Skills board ↗</button></div>
+          <div id="top-skills" class="skill-leaders"><div class="empty-state">The skills leaderboard will appear when scores are posted.</div></div>
+        </article>
+        <article class="surface field-notes">
+          <div class="field-note-sticker">MIKE'S NOTE</div>
+          <h3>Context matters.</h3>
+          <p>Alliance points are shared by two robots. This dashboard shows them as alliance results, not as points scored by one team alone.</p>
+          <div class="note-signoff">Scout smart. Verify everything. <span>✳</span></div>
+        </article>
       </div>
-      <div class="section-head lower"><div><div class="eyebrow">PRIORITY LIST</div><h2>Teams to investigate</h2></div></div>
-      <div class="table-wrap"><table><thead><tr><th>TEAM</th><th>SCHOOL</th><th>EVENT RECORD</th><th>STYLE</th><th>EVIDENCE</th></tr></thead><tbody id="priority-table"></tbody></table></div>
+      <div class="section-heading lower-heading"><div><span class="section-kicker">FIELD PULSE</span><h2>What is changing?</h2><p>Latest match, ranking and event updates.</p></div></div>
+      <article class="surface activity-surface"><div id="activity-feed" class="activity-feed"><div class="empty-state">The activity feed will start once the event data syncs.</div></div></article>
     </section>
-    <section id="teams" class="view">
-      <div class="section-head"><div><div class="eyebrow">ALL REGISTERED TEAMS</div><h2>Team directory</h2></div><span class="muted">24 entries</span></div>
-      <div class="filters"><input id="search" type="search" placeholder="Search team or school…" aria-label="Search teams"><select id="school-filter" aria-label="Filter by school"><option value="">All schools</option></select></div>
-      <div id="team-grid" class="team-grid"></div>
+
+    <section class="view" id="matches">
+      <div class="section-heading"><div><span class="section-kicker">LIVE SCOREBOARD</span><h2>Match centre</h2><p>Scheduled, in-progress and scored matches from every event division.</p></div><span class="live-caption">Official match records</span></div>
+      <div class="toolbar"><div class="filter-pills" id="match-filters"><button class="filter-pill active" data-filter="all" type="button">All matches</button><button class="filter-pill" data-filter="upcoming" type="button">Upcoming</button><button class="filter-pill" data-filter="scored" type="button">Scored</button></div><select id="division-filter" aria-label="Filter by division"><option value="">All divisions</option></select></div>
+      <div class="table-surface"><div class="table-scroll"><table><thead><tr><th>MATCH</th><th>DIVISION / FIELD</th><th>RED ALLIANCE</th><th>SCORE</th><th>BLUE ALLIANCE</th><th>STATUS</th></tr></thead><tbody id="match-table"><tr><td colspan="6" class="table-empty">No official match data loaded yet.</td></tr></tbody></table></div></div>
+      <p class="fine-print">Match scores are displayed exactly as returned by VEX Events. Unscored matches are not treated as 0–0 results.</p>
     </section>
-    <section id="evidence" class="view">
-      <div class="section-head"><div><div class="eyebrow">TRANSPARENCY</div><h2>Evidence & methodology</h2></div></div>
-      <div class="panel">
-        <h3>How to read this dashboard</h3>
-        <ul class="method-list">
-          <li><b>Observed facts</b><span>Supported by the named source. Third-party event summaries are labelled and should be checked against official VEX records before final decisions.</span></li>
-          <li><b>Analysis</b><span>Interpretation derived from observed evidence. It will be labelled as analysis, not fact.</span></li>
-          <li><b>Unknown</b><span>Not yet verified. Unknown values are never silently converted to zero.</span></li>
-          <li><b>Reliability score</b><span>Provisional evidence-coverage score, not a ranking of robot ability. Formula: 1 roster point + 1.5 per results event (maximum 3) + 1 for a published skills record + 2 for reviewed footage + 2 for notebook review + 1 for independent source confirmation. Unreviewed categories earn no points.</span></li>
-        </ul>
-        <h3>Match impact</h3>
-        <p>Any match-impact metric must publish its formula, component weights, sample size and source data. It will not be presented as an official VEX metric.</p>
-        <h3>Season boundary</h3>
-        <p>Only 2026 Override-season evidence is eligible for performance analysis. Older seasons may not be used to infer current robot capability.</p>
-        <h3>Last checked</h3><p>4 November 2026 · Two prior 2026 Override-season result summaries reviewed. They are third-party summaries, not yet independently reconciled against official VEX records, and do not represent a complete season event history.</p>
+
+    <section class="view" id="rankings">
+      <div class="section-heading"><div><span class="section-kicker">OFFICIAL ORDER</span><h2>Event rankings</h2><p>Rankings and tie-break fields published by VEX Events.</p></div><span class="live-caption">Not an analyst power ranking</span></div>
+      <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="ranking-search" type="search" placeholder="Find a team…" aria-label="Search rankings"></div><select id="ranking-division" aria-label="Filter rankings by division"><option value="">All divisions</option></select></div>
+      <div class="table-surface"><div class="table-scroll"><table><thead><tr><th>RANK</th><th>TEAM</th><th>W–L–T</th><th>WP</th><th>AP</th><th>SP</th><th>AVG PTS</th><th>HIGH SCORE</th></tr></thead><tbody id="ranking-table"><tr><td colspan="8" class="table-empty">Official ranking table has not loaded yet.</td></tr></tbody></table></div></div>
+      <p class="fine-print">WP, AP and SP are shown as supplied in the official event ranking response. They are not recalculated from raw match scores.</p>
+    </section>
+
+    <section class="view" id="teams">
+      <div class="section-heading"><div><span class="section-kicker">THE FIELD</span><h2>Team directory</h2><p>Open a team for event stats, season appearances and skills data.</p></div><span class="live-caption" id="team-count">0 teams</span></div>
+      <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="team-search" type="search" placeholder="Search team number or school…" aria-label="Search teams"></div><select id="school-filter" aria-label="Filter teams by organisation"><option value="">All organisations</option></select></div>
+      <div class="team-grid" id="team-grid"><div class="empty-state">Team cards will appear after the VEX event roster loads.</div></div>
+    </section>
+
+    <section class="view" id="skills">
+      <div class="section-heading"><div><span class="section-kicker">INDIVIDUAL CHALLENGE</span><h2>Skills & awards</h2><p>Best driver and programming scores, plus official awards as they are published.</p></div><span class="live-caption">Best run per skill type</span></div>
+      <div class="skills-layout">
+        <article class="surface"><div class="surface-heading"><div><span class="tiny-kicker">LEADERBOARD</span><h3>Skills standings</h3></div><span class="unit-label">Driver + programming</span></div><div id="skills-table" class="skills-table"><div class="empty-state">No skills scores have been posted.</div></div></article>
+        <article class="surface"><div class="surface-heading"><div><span class="tiny-kicker">RECOGNITION</span><h3>Event awards</h3></div></div><div id="awards-list" class="awards-list"><div class="empty-state">Awards will appear when they are released by VEX.</div></div></article>
       </div>
     </section>
-    <footer><span>1831M · TEAM MIKE</span><span>IN MIKE WE TRUST</span><span>INTERNAL SCOUTING RESOURCE</span></footer>
+
+    <section class="view" id="sources">
+      <div class="section-heading"><div><span class="section-kicker">NO GUESSWORK</span><h2>Sources & methodology</h2><p>Where the numbers come from, how they are calculated and what they do not say.</p></div></div>
+      <div class="source-grid">
+        <article class="surface"><span class="tiny-kicker">PRIMARY SOURCE</span><h3>VEX Events API v2</h3><p>The official VEX Events service supplies event metadata, registered teams, match records, division rankings, skills runs and awards. The page refreshes this feed automatically while open.</p><a class="source-link" href="https://events.vex.com/api/v2" target="_blank" rel="noopener">VEX Events API documentation ↗</a><a class="source-link" id="source-event-link" href="https://events.vex.com/" target="_blank" rel="noopener">Official event page ↗</a></article>
+        <article class="surface"><span class="tiny-kicker">CLIENT PACKAGE</span><h3>@v5x/events</h3><p>A community-developed TypeScript client for the VEX Events API. It handles typed requests, pagination and API retry behaviour. It is not an official VEX product; the underlying results remain sourced from VEX Events.</p><a class="source-link" href="https://www.npmjs.com/package/@v5x/events" target="_blank" rel="noopener">Package on npm ↗</a><a class="source-link" href="https://docs.v5x.dev/events/overview/" target="_blank" rel="noopener">Package documentation ↗</a></article>
+        <article class="surface"><span class="tiny-kicker">METRIC RULES</span><h3>How team stats work</h3><ul class="method-list"><li><b>Win rate</b><span>Wins divided by scored matches in the event response. Unscored matches are excluded.</span></li><li><b>Alliance points</b><span>Average points for and against from matches containing that team. Shared alliance result, not individual robot contribution.</span></li><li><b>Skills total</b><span>Best driver score plus best programming score for the event, not the sum of every attempt.</span></li><li><b>Event ranking</b><span>VEX's published division ranking, not a custom score invented by this dashboard.</span></li><li><b>Season appearances</b><span>Retrieved from the official team event history for the current event season. Failed lookups are marked as unchecked.</span></li></ul></article>
+        <article class="surface"><span class="tiny-kicker">DATA QUALITY</span><h3>What the dashboard will not do</h3><ul class="method-list"><li><b>No zero-fill</b><span>Missing or unreturned values stay blank. They are not treated as zero.</span></li><li><b>No robot attribution</b><span>Alliance scores do not prove what one robot scored or how it performed individually.</span></li><li><b>No stale-as-live</b><span>Cached snapshots are labelled with their original update time when VEX is unavailable.</span></li><li><b>Season boundary</b><span>Season history is filtered to the season attached to this event. Older seasons are not mixed into current performance stats.</span></li></ul></article>
+      </div>
+      <div class="archive-box"><div><span class="tiny-kicker">ARCHIVE — LEGACY SCOUTING NOTES</span><h3>Earlier scouting snapshots</h3><p>Older third-party summaries are kept as research references only. They are not merged into official live rankings or used as current performance facts.</p></div><div id="archive-sources" class="archive-links"></div></div>
+      <div class="source-footer" id="source-health">Waiting for the source connection test.</div>
+    </section>
+
+    <footer class="footer"><div><b>1831M <span>· TEAM MIKE</span></b><small>Built for the field, not the spreadsheet.</small></div><div class="footer-right">IN MIKE WE TRUST <span>✳</span></div></footer>
   </main>
+
+  <dialog id="team-dialog" class="team-dialog"><div class="dialog-head"><div><span class="tiny-kicker">TEAM PROFILE</span><h2 id="dialog-title">Team</h2></div><button id="dialog-close" class="icon-button" type="button" aria-label="Close team profile">×</button></div><div id="dialog-body"></div></dialog>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
