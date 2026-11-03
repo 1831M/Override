@@ -22,6 +22,10 @@ $("#school-bars").innerHTML = schools.map(s => {
   return '<div class="school-row"><span>' + s + '</span><div class="bar"><i style="width:' + (n / data.teams.length * 100) + '%"></i></div><b>' + n + '</b></div>';
 }).join("");
 
+const septAlliance = data.teams.flatMap(t => t.events.filter(e => e.event === "knox-sep27" && e.qualAlliance).map(e => ({id:t.id,diff:e.qualAlliance.diffAvg}))).sort((a,b)=>b.diff-a.diff).slice(0,10);
+const maxDiff = Math.max(...septAlliance.map(x=>Math.abs(x.diff)),1);
+$("#alliance-diff-bars").innerHTML = septAlliance.map(x => '<div class="diff-row"><b>'+x.id+'</b><div class="diff-track"><i class="'+(x.diff>=0?'positive':'negative')+'" style="width:'+(Math.abs(x.diff)/maxDiff*100)+'%"></i></div><span>'+(x.diff>0?'+':'')+x.diff.toFixed(1)+'</span></div>').join("");
+
 $(".coverage-number").innerHTML = verifiedTeams.length + '<span>/24</span>';
 $(".coverage p").textContent = "teams with at least one event-result record in the two reviewed third-party summaries";
 $(".progress i").style.width = (verifiedTeams.length / data.teams.length * 100) + "%";
