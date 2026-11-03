@@ -45,7 +45,7 @@ function renderTeams() {
   $("#team-grid").innerHTML = rows.map(t => {
     const records = t.events.map(e => {
       const ev = eventById[e.event];
-      return '<div class="record-row"><b>' + ev.date + '</b><span>' + e.record + '</span><span>Rank #' + e.rank + '</span></div><div class="record-metrics">AP ' + e.ap + ' · SP ' + e.sp + ' · VP ' + e.vp + (e.skills !== undefined ? ' · Skills ' + e.skills + ' (D ' + e.driver + ' / A ' + e.auton + ')' : '') + '</div>';
+      return '<div class="record-row"><b>' + ev.date + '</b><span>' + e.record + '</span><span>Rank #' + e.rank + '</span></div><div class="record-metrics">AP ' + e.ap + ' · SP ' + e.sp + ' · VP ' + e.vp + (e.skills !== undefined ? ' · Skills ' + e.skills + ' (D ' + e.driver + ' / A ' + e.auton + ')' : '') + (e.qualAlliance ? '<br>Alliance avg: ' + e.qualAlliance.forAvg + ' for / ' + e.qualAlliance.againstAvg + ' against · Δ ' + (e.qualAlliance.diffAvg > 0 ? '+' : '') + e.qualAlliance.diffAvg : '') + '</div>';
     }).join("");
     const skill = t.events.find(e => e.skills !== undefined);
     return '<article class="team-card"><h3>' + t.id + '</h3><p>' + t.school + '</p><div class="team-records">' + (records || '<div class="record-empty">No results record verified in reviewed sources</div>') + '</div><div class="card-bottom"><span class="tag">' + t.events.length + ' EVENT RECORD' + (t.events.length === 1 ? '' : 'S') + '</span><span class="muted">Evidence ' + reliability(t).toFixed(1) + '/10</span></div></article>';
