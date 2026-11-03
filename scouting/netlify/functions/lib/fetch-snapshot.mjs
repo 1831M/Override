@@ -65,28 +65,36 @@ export function createSnapshotLoader({historyTtlMs = 10 * 60_000, now = () => Da
     }
 
     const errors = [];
-    const collect = async (label, request) => {
-      try { return await request; }
-      catch (error) {
+    const sourceAvailability = {teams:null,skills:null,awards:null,matches:{},rankings:{}};
+    const collect = async (label, request, statusMap, statusKey) => {
+      try {
+        const value = await request;
+        if (statusMap) statusMap[statusKey] = true;
+        return value;
+      } catch (error) {
+        if (statusMap) statusMap[statusKey] = false;
         errors.push({source:label,status:error?.status || null,message:error?.message || "Request failed"});
         return [];
       }
     };
 
     const [teams,skills,awards] = await Promise.all([
-      collect("event teams",robot.events.teams(event.id,{registered:true})),
-      collect("skills",robot.events.skills(event.id)),
-      collect("awards",robot.events.awards(event.id))
+      collect("event teams",robot.events.teams(event.id,{registered:true}),sourceAvailability,"teams"),
+      collect("skills",robot.events.skills(event.id),sourceAvailability,"skills"),
+      collect("awards",robot.events.awards(event.id),sourceAvailability,"awards")
     ]);
 
     const divisions = await mapLimit(event.divisions || [],3,async division => {
+      const divisionKey = division.name || String(division.id || "unknown");
       if (!Number.isInteger(division.id)) {
-        errors.push({source:"division " + (division.name || "unknown"),status:null,message:"Division ID not supplied by VEX"});
+        sourceAvailability.matches[divisionKey] = false;
+        sourceAvailability.rankings[divisionKey] = false;
+        errors.push({source:"division " + divisionKey,status:null,message:"Division ID not supplied by VEX"});
         return {division,matches:[],rankings:[]};
       }
       const [matches,rankings] = await Promise.all([
-        collect("matches · " + (division.name || division.id),robot.events.matches(event.id,division.id)),
-        collect("rankings · " + (division.name || division.id),robot.events.rankings(event.id,division.id))
+        collect("matches · " + divisionKey,robot.events.matches(event.id,division.id),sourceAvailability.matches,divisionKey),
+        collect("rankings · " + divisionKey,robot.events.rankings(event.id,division.id),sourceAvailability.rankings,divisionKey)
       ]);
       return {division,matches,rankings};
     });
@@ -110,6 +118,7 @@ export function createSnapshotLoader({historyTtlMs = 10 * 60_000, now = () => Da
       eventCount:Object.values(history.byTeam || {}).reduce((sum,items) => sum + items.length,0)
     };
     snapshot.sourceErrors = errors;
+    snapshot.sourceAvailability = sourceAvailability;
     snapshot.liveStatus = event.ongoing === true ? "in_progress" : "event_feed";
     return snapshot;
   };
