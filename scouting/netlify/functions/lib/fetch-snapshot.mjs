@@ -74,7 +74,7 @@ export function createSnapshotLoader({historyTtlMs = 10 * 60_000, now = () => Da
     };
 
     const [teams,skills,awards] = await Promise.all([
-      collect("event teams",robot.events.teams(event.id)),
+      collect("event teams",robot.events.teams(event.id,{registered:true})),
       collect("skills",robot.events.skills(event.id)),
       collect("awards",robot.events.awards(event.id))
     ]);
