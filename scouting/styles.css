@@ -270,3 +270,18 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}
 }
+.season-intel{padding:20px}
+.season-note{padding:12px 14px;border-radius:10px;background:#f7f4e9;color:#83734e;font-size:10px;line-height:1.7}
+.season-note b{color:#67542e}
+.season-toolbar{justify-content:flex-start;flex-wrap:wrap}
+.season-toolbar .search-wrap{flex:1;min-width:190px}
+.season-table{min-width:950px}
+.confidence-tag,.tier-tag{display:inline-block;padding:5px 8px;border-radius:7px;font-size:8px;font-weight:800}
+.confidence-tag.high{background:#e9f3e9;color:#4e805b}
+.confidence-tag.medium{background:#fff4dc;color:#987638}
+.confidence-tag.low{background:#fbe9e4;color:#a86453}
+.tier-tag{min-width:24px;text-align:center;background:#edf1eb;color:#58715f}
+.tier-tag.tier-s{background:#f8e4df;color:#a24e40}
+.tier-tag.tier-a{background:#fff0d4;color:#96713b}
+.tier-tag.tier-b{background:#e9f1e8;color:#55775d}
+.tier-tag.tier-c{background:#edf0f2;color:#687b84}
