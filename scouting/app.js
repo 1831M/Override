@@ -153,6 +153,7 @@
     renderDivisionFilters();
     renderMatches();
     renderRankings();
+    renderSeasonSnapshot();
     renderTeams();
     renderSkills();
     renderSources();
@@ -272,6 +273,28 @@
     $("#ranking-table").innerHTML = rows.map(row =>
       '<tr><td><span class="rank-number">' + num(row.rank) + '</span></td><td><b class="table-team">' + esc(row.team) + '</b><small>' + esc(row.division) + '</small></td><td>' + esc([row.wins ?? "—",row.losses ?? "—",row.ties ?? "—"].join("–")) + '</td><td>' + num(row.wp) + '</td><td>' + num(row.ap) + '</td><td>' + num(row.sp) + '</td><td>' + num(row.averagePoints) + '</td><td>' + num(row.highScore) + '</td></tr>'
     ).join("") || '<tr><td colspan="8" class="table-empty">' + (divisionFeedComplete("rankings") ? "No published rankings match this filter." : "Rankings are unavailable from one or more VEX division feeds. No ranking is inferred.") + '</td></tr>';
+  }
+
+
+  function renderSeasonSnapshot() {
+    const data = legacy?.seasonSnapshot;
+    const body = $("#season-table");
+    if (!body) return;
+    if (!data?.metrics?.length) {
+      body.innerHTML = '<tr><td colspan="9" class="table-empty">No historical season baseline is available.</td></tr>';
+      return;
+    }
+    const search = ($("#season-search")?.value || "").trim().toLowerCase();
+    const tier = $("#season-tier")?.value || "";
+    const sort = $("#season-sort")?.value || "ccwm";
+    const rows = data.metrics.filter(row =>
+      (!tier || row.tier === tier) &&
+      (!search || row.team.toLowerCase().includes(search))
+    ).sort((a,b) => sort === "team" ? a.team.localeCompare(b.team,undefined,{numeric:true}) : (Number(b[sort]) - Number(a[sort])));
+    body.innerHTML = rows.map(row =>
+      '<tr><td><b class="table-team">' + esc(row.team) + '</b></td><td>' + row.w + '–' + row.l + '–' + row.t + '</td><td>' + num(row.win) + '%</td><td>' + num(row.forAvg) + '</td><td>' + num(row.againstAvg) + '</td><td>' + signed(row.margin) + '</td><td><b>' + signed(row.ccwm) + '</b></td><td><span class="confidence-tag ' + esc(row.confidence.toLowerCase()) + '">' + esc(row.confidence) + '</span></td><td><span class="tier-tag tier-' + esc(row.tier.toLowerCase()) + '">' + esc(row.tier) + '</span></td></tr>'
+    ).join("") || '<tr><td colspan="9" class="table-empty">No teams match these filters.</td></tr>';
+    $("#season-count").textContent = rows.length + " of " + data.metrics.length + " teams · Source: " + data.source + " · Checked " + data.checked + ". " + data.note;
   }
 
   function renderTeams() {
@@ -412,6 +435,9 @@
     $("#division-filter").addEventListener("change",renderMatches);
     $("#ranking-division").addEventListener("change",renderRankings);
     $("#ranking-search").addEventListener("input",renderRankings);
+    $("#season-search").addEventListener("input",renderSeasonSnapshot);
+    $("#season-tier").addEventListener("change",renderSeasonSnapshot);
+    $("#season-sort").addEventListener("change",renderSeasonSnapshot);
     $("#team-search").addEventListener("input",renderTeams);
     $("#school-filter").addEventListener("change",renderTeams);
     $("#team-grid").addEventListener("click",event => {
