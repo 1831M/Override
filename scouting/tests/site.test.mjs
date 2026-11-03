@@ -17,6 +17,10 @@ test("every direct app id selector exists in the page", () => {
   assert.deepEqual(missing, []);
 });
 
+test("browser application parses as valid JavaScript", () => {
+  assert.doesNotThrow(() => new Function(app));
+});
+
 test("all six dashboard views and navigation targets exist", () => {
   for (const view of ["overview","matches","rankings","teams","skills","sources"]) {
     assert.ok(html.includes('id="' + view + '"') || html.includes("id='" + view + "'"));
