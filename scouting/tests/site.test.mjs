@@ -36,4 +36,7 @@ test("live endpoint uses the VEX Events package and keeps token server-side", ()
   assert.match(functionSource, /VEX_EVENTS_TOKEN/);
   assert.doesNotMatch(app, /Bearer /);
   assert.match(app, /POLL_MS = 60_000/);
+  assert.match(app, /divisionFeedComplete/);
+  assert.match(app, /sourceAvailability?\.skills === false/);
+  assert.match(app, /team roster could not be loaded/);
 });
