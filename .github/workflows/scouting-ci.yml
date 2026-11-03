@@ -1,0 +1,29 @@
+name: Scouting dashboard checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scouting/**"
+      - "netlify.toml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scouting
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install VEX Events client
+        run: npm install
+      - name: Run syntax, analytics and UI checks
+        run: npm run check
+      - name: Build static dashboard
+        run: npm run build
