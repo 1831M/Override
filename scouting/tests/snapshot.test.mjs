@@ -83,6 +83,7 @@ test("fetches one official event snapshot across all competition data sources",a
   assert.equal(snapshot.seasonHistory.checkedTeams,2);
   assert.equal(snapshot.seasonHistory.eventCount,2);
   assert.equal(snapshot.sourceErrors.length,0);
+  assert.deepEqual(snapshot.sourceAvailability,{teams:true,skills:true,awards:true,matches:{Main:true},rankings:{Main:true}});
   assert.equal(snapshot.liveStatus,"event_feed");
   assert.equal(new Date(snapshot.fetchedAt).toISOString(),"2026-11-08T10:00:00.000Z");
 });
@@ -94,6 +95,7 @@ test("one failing source stays visible as a warning without discarding good even
   assert.equal(snapshot.teams.length,2);
   assert.equal(snapshot.matches.length,2);
   assert.equal(snapshot.skills.length,0);
+  assert.equal(snapshot.sourceAvailability.skills,false);
   assert.ok(snapshot.sourceErrors.some(error=>error.source==="skills"&&error.message==="skills temporarily unavailable"));
 });
 
@@ -109,6 +111,25 @@ test("failed team-history lookups are marked unchecked, not treated as no events
   assert.equal(snapshot.stats.find(team=>team.number==="1831M").eventHistory.length,1);
   assert.equal(snapshot.stats.find(team=>team.number==="1940H").eventHistory.length,0);
   assert.ok(snapshot.sourceErrors.some(error=>error.source==="season history · 1940H"));
+});
+
+
+test("a failed team roster feed is unknown, not a genuine empty roster",async()=>{
+  const {robot}=fakeRobot({events:{teams:async()=>{throw new Error("team roster timeout");}}});
+  const load=createSnapshotLoader();
+  const snapshot=await load(robot,"VE-V5-26-66512");
+  assert.equal(snapshot.teams.length,0);
+  assert.equal(snapshot.sourceAvailability.teams,false);
+  assert.ok(snapshot.sourceErrors.some(error=>error.source==="event teams"));
+});
+
+test("a failed division match feed is distinct from a successfully empty schedule",async()=>{
+  const {robot}=fakeRobot({events:{matches:async()=>{throw new Error("matches timeout");}}});
+  const load=createSnapshotLoader();
+  const snapshot=await load(robot,"VE-V5-26-66512");
+  assert.equal(snapshot.matches.length,0);
+  assert.equal(snapshot.sourceAvailability.matches.Main,false);
+  assert.equal(snapshot.sourceAvailability.rankings.Main,true);
 });
 
 test("unknown event SKU fails clearly instead of returning an empty fake snapshot",async()=>{
