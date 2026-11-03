@@ -27,11 +27,11 @@ const fixtureMatches = [
 ];
 
 function fakeRobot(overrides = {}) {
-  const calls = {sku:[],teams:[],skills:0,awards:0,matches:[],rankings:[],history:[]};
+  const calls = {sku:[],teams:[],teamOptions:null,skills:0,awards:0,matches:[],rankings:[],history:[]};
   const robot = {
     events:{
       getBySku:async sku => {calls.sku.push(sku);return fixtureEvent;},
-      teams:async id => {calls.teams.push(id);return fixtureTeams;},
+      teams:async (id,options) => {calls.teams.push(id);calls.teamOptions=options;return fixtureTeams;},
       skills:async () => {calls.skills++;return [
         {team:{id:1,name:"1831M"},type:"driver",score:60,attempts:1},
         {team:{id:1,name:"1831M"},type:"driver",score:55,attempts:1},
@@ -64,6 +64,7 @@ test("fetches one official event snapshot across all competition data sources",a
   const snapshot=await load(robot,"VE-V5-26-66512");
   assert.equal(calls.sku[0],"VE-V5-26-66512");
   assert.deepEqual(calls.teams,[66512]);
+  assert.deepEqual(calls.teamOptions,{registered:true});
   assert.deepEqual(calls.matches,[[66512,3]]);
   assert.deepEqual(calls.rankings,[[66512,3]]);
   assert.equal(calls.skills,1);
