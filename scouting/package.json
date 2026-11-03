@@ -10,7 +10,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check app.js && node --check scripts/build.mjs && node --check netlify/functions/live-data.mjs && node --check netlify/functions/lib/analytics.mjs && npm test"
+    "check": "node --check app.js && node --check scripts/build.mjs && node --check netlify/functions/live-data.mjs && node --check netlify/functions/lib/analytics.mjs && node --check netlify/functions/lib/fetch-snapshot.mjs && npm test"
   },
   "dependencies": {
     "@v5x/events": "0.2.1"
