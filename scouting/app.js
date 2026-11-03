@@ -13,7 +13,7 @@ function reliability(t) {
 $("#summary").innerHTML = [
   [data.teams.length, "REGISTERED TEAMS"],
   [schools.length, "SCHOOLS / PROGRAMMES"],
-  [verifiedTeams.length + "/24", "WITH VERIFIED EVENT RESULTS"],
+  [verifiedTeams.length + "/24", "WITH EVENT RESULT DATA"],
   [appearances, "RESULTS RECORDS LOGGED"]
 ].map(([v, l]) => '<div class="stat"><strong>' + v + '</strong><span>' + l + '</span></div>').join("");
 
@@ -23,7 +23,7 @@ $("#school-bars").innerHTML = schools.map(s => {
 }).join("");
 
 $(".coverage-number").innerHTML = verifiedTeams.length + '<span>/24</span>';
-$(".coverage p").textContent = "teams with at least one results record in the two reviewed event sources";
+$(".coverage p").textContent = "teams with at least one event-result record in the two reviewed third-party summaries";
 $(".progress i").style.width = (verifiedTeams.length / data.teams.length * 100) + "%";
 
 const bestRecord = t => t.events.length ? t.events.slice().sort((a, b) => {
