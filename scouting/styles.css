@@ -285,3 +285,18 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 .tier-tag.tier-a{background:#fff0d4;color:#96713b}
 .tier-tag.tier-b{background:#e9f1e8;color:#55775d}
 .tier-tag.tier-c{background:#edf0f2;color:#687b84}
+
+.season-charts{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:15px}
+.chart-panel{padding:16px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.chart-heading{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin-bottom:13px}
+.chart-heading b{font:700 12px "Space Grotesk";color:#385544}
+.chart-heading span{font-size:8px;color:#98a49b}
+.season-bars{display:grid;gap:9px}
+.season-bar-row{display:grid;grid-template-columns:55px 1fr 42px;gap:8px;align-items:center;font-size:9px}
+.season-bar-row>b{font:700 9px "Space Grotesk";color:#5b7162}
+.season-bar-row>strong{text-align:right;font:700 9px "Space Grotesk";color:#496452}
+.season-bar-track{height:8px;border-radius:99px;background:#eef2ec;overflow:hidden}
+.season-bar-track i{display:block;height:100%;border-radius:99px}
+.season-bar-track i.positive{background:#83b994}
+.season-bar-track i.negative{background:#d99b8d}
+@media(max-width:700px){.season-charts{grid-template-columns:1fr}.chart-heading{align-items:flex-start;flex-direction:column}}
