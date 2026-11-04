@@ -421,3 +421,32 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 .dossier-profile-copy p{margin:0 0 8px;font-size:10px;line-height:1.65;color:#65756a}
 .dossier-profile .source-link{display:inline-block;margin-top:5px}
 @media(max-width:700px){.dossier-profile-grid{grid-template-columns:1fr}.dossier-profile-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Interactive dossier profile controls */
+.dossier-profile{display:block;overflow:hidden}
+.dossier-profile-summary{display:block;list-style:none;cursor:pointer}
+.dossier-profile-summary::-webkit-details-marker{display:none}
+.dossier-profile-summary::marker{content:""}
+.dossier-profile-summary:focus-visible{outline:3px solid #87ad91;outline-offset:3px;border-radius:9px}
+.profile-expand-hint{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:9px;font-weight:800;letter-spacing:.04em;color:#688171}
+.dossier-profile[open] .profile-expand-hint span{transform:rotate(45deg)}
+.dossier-profile-expanded{padding-top:13px}
+.profile-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:13px}
+.profile-actions .secondary-button{font-size:9px;padding:9px 11px}
+.profile-actions .source-link{margin-left:auto}
+.profile-event-list{display:grid;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+.profile-event-list>b{font:700 9px "Space Grotesk";color:#607765}
+.profile-event-row{display:grid;grid-template-columns:85px 1fr auto;gap:8px;align-items:center;font-size:9px;color:#7b8b80}
+.profile-event-row strong{color:#4b6b55}
+.source-audit-panel{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin:13px 0;padding:16px;border:1px solid #ead8b8;border-left:4px solid #c69a56;border-radius:11px;background:#fffaf0}
+.source-audit-panel>div{min-width:0}
+.source-audit-panel .tiny-kicker{display:block;margin-bottom:5px;color:#a47a3f}
+.source-audit-panel b{font:700 12px "Space Grotesk";color:#70552f}
+.source-audit-panel p{margin:7px 0;font-size:10px;line-height:1.7;color:#7e715b}
+.source-audit-panel a{font-size:9px;font-weight:800;color:#765d35}
+.audit-status{flex:0 0 auto;padding:7px 9px;border-radius:7px;background:#f6e9ce;color:#8b672e;font-size:8px;font-weight:900;letter-spacing:.06em}
+.game-rule-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:12px 0}
+.game-rule-grid>div{display:grid;gap:4px;padding:12px;border:1px solid var(--line);border-radius:9px;background:#fbfcfa}
+.game-rule-grid b{font:700 18px "Space Grotesk";color:#385c44}
+.game-rule-grid small{font-size:8px;color:#7c8c80;line-height:1.4}
+@media(max-width:700px){.source-audit-panel{flex-direction:column}.game-rule-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-actions .source-link{margin-left:0}.profile-event-row{grid-template-columns:72px 1fr auto}}
