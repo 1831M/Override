@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildWatchlistScheduleRows } from "../watchlist.mjs";
+import { buildWatchlistScheduleRows, summarizeWatchlistCoverage } from "../watchlist.mjs";
 
 const matches = [
   {name:"Q4",division:"Main",scored:false,scheduled:"2026-11-08T10:30:00+11:00",redTeams:["1831M","1940H"],blueTeams:["4613G","999A"]},
@@ -49,4 +49,31 @@ test("bad optional inputs return an empty plan instead of throwing", () => {
   assert.deepEqual(buildWatchlistScheduleRows([{scored:false,redTeams:["A"],blueTeams:[]}], ["A"]), [
     {match:"Match",division:"Division not listed",field:"",scheduled:"",red:["A"],blue:[],watched:["A"],focus:"Red alliance",source:"Manually pinned",_index:0}
   ]);
+});
+
+test("coverage summary identifies tracked teams with no published fixture", () => {
+  const coverage = summarizeWatchlistCoverage(matches, ["1831M", "777A"], []);
+  assert.deepEqual(coverage, {
+    priorityTeams: 2,
+    scheduledTeams: 1,
+    unscheduledTeams: ["777A"],
+    fixtureCount: 2,
+    priorityMatchups: 0
+  });
+});
+
+test("coverage summary counts fixtures with watched teams on both alliances", () => {
+  const coverage = summarizeWatchlistCoverage(matches, [], [
+    {team:"1831M",tier:"S",ccwm:20},
+    {team:"1940H",tier:"A",ccwm:10}
+  ]);
+  assert.equal(coverage.priorityTeams, 2);
+  assert.equal(coverage.scheduledTeams, 2);
+  assert.equal(coverage.priorityMatchups, 1);
+});
+
+test("coverage summary handles missing and malformed inputs safely", () => {
+  assert.deepEqual(summarizeWatchlistCoverage(null, null, null), {
+    priorityTeams: 0, scheduledTeams: 0, unscheduledTeams: [], fixtureCount: 0, priorityMatchups: 0
+  });
 });

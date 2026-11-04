@@ -1,4 +1,4 @@
-export function buildWatchlistScheduleRows(matches = [], pinnedTeams = [], baselineMetrics = []) {
+function resolveWatchlistTeams(pinnedTeams = [], baselineMetrics = []) {
   const pinned = Array.isArray(pinnedTeams)
     ? [...new Set(pinnedTeams.map(value => String(value ?? "").trim()).filter(Boolean))].slice(0, 24)
     : [];
@@ -8,6 +8,11 @@ export function buildWatchlistScheduleRows(matches = [], pinnedTeams = [], basel
       (Number(b.ccwm) || 0) - (Number(a.ccwm) || 0))
     .slice(0, 10)
     .map(row => String(row.team));
+  return { pinned, priorities };
+}
+
+export function buildWatchlistScheduleRows(matches = [], pinnedTeams = [], baselineMetrics = []) {
+  const { pinned, priorities } = resolveWatchlistTeams(pinnedTeams, baselineMetrics);
   const watched = new Set(priorities);
   return (Array.isArray(matches) ? matches : []).flatMap((match, index) => {
     if (!match || match.scored !== false) return [];
@@ -36,4 +41,17 @@ export function buildWatchlistScheduleRows(matches = [], pinnedTeams = [], basel
     if (aValid !== bValid) return aValid ? -1 : 1;
     return a._index - b._index;
   });
+}
+
+export function summarizeWatchlistCoverage(matches = [], pinnedTeams = [], baselineMetrics = []) {
+  const { priorities } = resolveWatchlistTeams(pinnedTeams, baselineMetrics);
+  const rows = buildWatchlistScheduleRows(matches, pinnedTeams, baselineMetrics);
+  const scheduled = new Set(rows.flatMap(row => row.watched));
+  return {
+    priorityTeams: priorities.length,
+    scheduledTeams: priorities.filter(team => scheduled.has(team)).length,
+    unscheduledTeams: priorities.filter(team => !scheduled.has(team)),
+    fixtureCount: rows.length,
+    priorityMatchups: rows.filter(row => row.focus === "Both alliances").length
+  };
 }
