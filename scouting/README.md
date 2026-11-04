@@ -50,6 +50,7 @@ Signals are prompts for scouts, not verdicts. Alliance scores are shared by two 
 - Team collection diagnostics report only field names and data types, never team records or API credentials.
 - A post-deploy CI smoke test verifies the live event feed against the production alias.
 - The live function normalises nullable optional venue fields in VEX team responses before schema validation.
+- Scouts can pin up to 24 teams to a browser-local priority list, remove pins, and export that list to CSV.
 - The function keeps a short in-memory snapshot cache to avoid duplicate API requests.
 - Team season history is refreshed at most once per 10 minutes per warm function instance.
 - The browser stores the last successful official snapshot locally. If the API is temporarily unavailable, that snapshot is shown with its original update time and a stale-data label.
