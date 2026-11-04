@@ -79,7 +79,7 @@ export function createSnapshotLoader({historyTtlMs = 10 * 60_000, now = () => Da
     };
 
     let [teams,skills,awards] = await Promise.all([
-      collect("event teams",robot.events.teams(event.id,{registered:true}),sourceAvailability,"teams"),
+      collect("event teams",robot.events.teams(event.id),sourceAvailability,"teams"),
       collect("skills",robot.events.skills(event.id),sourceAvailability,"skills"),
       collect("awards",robot.events.awards(event.id),sourceAvailability,"awards")
     ]);
@@ -87,7 +87,7 @@ export function createSnapshotLoader({historyTtlMs = 10 * 60_000, now = () => Da
     const sourceRecoveries = [];
     if (!sourceAvailability.teams || teams.length === 0) {
       try {
-        const searchedTeams = await robot.teams.search({events:[event.id],registered:true});
+        const searchedTeams = await robot.teams.search({events:[event.id]});
         if (searchedTeams.length > 0) {
           teams = searchedTeams;
           sourceAvailability.teams = true;
