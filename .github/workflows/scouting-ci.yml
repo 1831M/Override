@@ -53,6 +53,6 @@ jobs:
             sourceErrors: snapshot.sourceErrors || [],
             sourceAvailability: snapshot.sourceAvailability || {},
             divisions: snapshot.event?.divisions || [],
-            sourceDiagnostics: snapshot.sourceDiagnostics || []
+            sourceRecoveries: snapshot.sourceRecoveries || []
           }));
           NODE
