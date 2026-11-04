@@ -142,7 +142,18 @@
           <select id="season-sort" aria-label="Sort season scouting"><option value="ccwm">Sort: CCWM</option><option value="win">Sort: Win rate</option><option value="margin">Sort: Average margin</option><option value="forAvg">Sort: Avg points for</option><option value="team">Sort: Team number</option></select>
         </div>
         <div class="table-surface"><div class="table-scroll"><table class="season-table"><thead><tr><th>TEAM</th><th>W–L–T</th><th>MATCHES</th><th>WIN %</th><th>AVG FOR</th><th>AVG AGAINST</th><th>MARGIN</th><th>CCWM</th><th>CONFIDENCE</th><th>THREAT</th></tr></thead><tbody id="season-table"><tr><td colspan="10" class="table-empty">Season scouting data is loading.</td></tr></tbody></table></div></div>
-        <div class="season-charts"><div class="chart-panel"><div class="chart-heading"><b>CCWM leaders</b><span>Higher = stronger season signal</span></div><div id="season-ccwm-chart" class="season-bars"></div></div><div class="chart-panel"><div class="chart-heading"><b>Average score margin</b><span>Alliance points for minus against</span></div><div id="season-margin-chart" class="season-bars"></div></div></div>
+        <div class="season-charts season-charts-interactive">
+          <div class="chart-panel">
+            <div class="chart-heading"><b>Explore the season data</b><span>Choose a metric and click a team to open its dossier</span></div>
+            <div class="chart-controls"><label>Metric<select id="season-chart-metric"><option value="ccwm">CCWM</option><option value="margin">Average score margin</option><option value="win">Win rate</option><option value="forAvg">Average points for</option><option value="againstAvg">Average points against</option></select></label><label>Order<select id="season-chart-order"><option value="desc">Highest first</option><option value="asc">Lowest first</option></select></label></div>
+            <div id="season-metric-chart" class="season-bars" aria-live="polite"></div>
+          </div>
+          <div class="chart-panel chart-scatter-panel">
+            <div class="chart-heading"><b>Scoring profile map</b><span>Average points for vs average points against</span></div>
+            <div id="season-scatter-chart" class="season-scatter" role="group" aria-label="Interactive scatter plot of all 24 teams"></div>
+            <p class="fine-print">Each point is one team. Further right means higher average scoring; higher on the plot means more points conceded. Select a point to open that team's dossier.</p>
+          </div>
+        </div>
         <p class="fine-print" id="season-count">Historical scouting snapshot. It does not update with the official live event feed.</p>
       </article>
       <article class="surface season-intel">
