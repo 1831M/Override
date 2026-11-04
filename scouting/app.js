@@ -1,4 +1,4 @@
-import { buildWatchlistScheduleRows, summarizeWatchlistCoverage } from "./watchlist.mjs";
+import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistScheduleEmptyMessage } from "./watchlist.mjs";
 
 (() => {
   "use strict";
@@ -475,17 +475,18 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage } from "./watchl
     const heading=pinned.length
       ? pinned.length+" manually pinned team(s)"
       : "Top historical S/A priorities (pin teams to customise)";
+    const missingText=coverage.unscheduledTeams.length
+      ? " · Not yet scheduled: "+coverage.unscheduledTeams.slice(0,6).join(", ")+(coverage.unscheduledTeams.length>6?" +"+(coverage.unscheduledTeams.length-6)+" more":"")
+      : "";
     const coverageText=coverage.priorityTeams
-      ? coverage.scheduledTeams+"/"+coverage.priorityTeams+" priority teams scheduled · "+coverage.priorityMatchups+" priority-vs-priority fixture(s)"
+      ? coverage.scheduledTeams+"/"+coverage.priorityTeams+" priority teams scheduled · "+coverage.priorityMatchups+" priority-vs-priority fixture(s)"+missingText
       : "No priority teams available";
     $("#watchlist-schedule-caption").textContent=heading+" · "+rows.length+" upcoming fixture(s) · "+coverageText;
     target.innerHTML=rows.length
       ? '<div class="table-scroll"><table class="watch-schedule-table"><thead><tr><th>Match</th><th>Division / field</th><th>Teams to watch</th><th>Red alliance</th><th>Blue alliance</th><th>Scheduled</th></tr></thead><tbody>'+rows.map(row=>
         '<tr><td><b>'+esc(row.match)+'</b><small>'+esc(row.focus)+'</small></td><td>'+esc(row.division)+(row.field?' · Field '+esc(row.field):'')+'</td><td><b>'+esc(row.watched.join(", "))+'</b><small>'+esc(row.source)+'</small></td><td class="red-cell">'+esc(row.red.join(" · ")||"—")+'</td><td class="blue-cell">'+esc(row.blue.join(" · ")||"—")+'</td><td>'+esc(row.scheduled?dateTime(row.scheduled):"Time TBC")+'</td></tr>'
       ).join("")+'</tbody></table></div>'
-      : '<div class="empty-state">'+(state.snapshot?.matches?.length
-        ? "No unscored fixtures currently include the selected watchlist teams. The official schedule may still be incomplete."
-        : "The official match schedule has not been published yet.")+'</div>';
+      : '<div class="empty-state">'+esc(getWatchlistScheduleEmptyMessage(matches,rows))+'</div>';
   }
 
   function exportWatchlistSchedule() {

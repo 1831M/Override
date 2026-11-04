@@ -55,3 +55,11 @@ export function summarizeWatchlistCoverage(matches = [], pinnedTeams = [], basel
     priorityMatchups: rows.filter(row => row.focus === "Both alliances").length
   };
 }
+
+export function getWatchlistScheduleEmptyMessage(matches = [], rows = []) {
+  if (!Array.isArray(matches) || matches.length === 0) return "The official match schedule has not been published yet.";
+  const upcoming = matches.filter(match => match && match.scored === false);
+  if (upcoming.length === 0) return "No unscored fixtures remain in the official feed.";
+  if (!Array.isArray(rows) || rows.length === 0) return "No unscored fixtures currently include the selected watchlist teams. The official schedule may still be incomplete.";
+  return "";
+}

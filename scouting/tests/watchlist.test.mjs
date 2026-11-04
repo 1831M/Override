@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildWatchlistScheduleRows, summarizeWatchlistCoverage } from "../watchlist.mjs";
+import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistScheduleEmptyMessage } from "../watchlist.mjs";
 
 const matches = [
   {name:"Q4",division:"Main",scored:false,scheduled:"2026-11-08T10:30:00+11:00",redTeams:["1831M","1940H"],blueTeams:["4613G","999A"]},
@@ -76,4 +76,11 @@ test("coverage summary handles missing and malformed inputs safely", () => {
   assert.deepEqual(summarizeWatchlistCoverage(null, null, null), {
     priorityTeams: 0, scheduledTeams: 0, unscheduledTeams: [], fixtureCount: 0, priorityMatchups: 0
   });
+});
+
+test("empty planner messaging distinguishes unpublished, completed and unmatched schedules", () => {
+  assert.equal(getWatchlistScheduleEmptyMessage([], []), "The official match schedule has not been published yet.");
+  assert.equal(getWatchlistScheduleEmptyMessage([{scored:true}], []), "No unscored fixtures remain in the official feed.");
+  assert.match(getWatchlistScheduleEmptyMessage([{scored:false}], []), /may still be incomplete/);
+  assert.equal(getWatchlistScheduleEmptyMessage([{scored:false}], [{match:"Q1"}]), "");
 });
