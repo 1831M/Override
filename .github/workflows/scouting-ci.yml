@@ -6,6 +6,7 @@ on:
     paths:
       - "scouting/**"
       - "netlify.toml"
+      - ".github/workflows/scouting-ci.yml"
   workflow_dispatch:
 
 jobs:
