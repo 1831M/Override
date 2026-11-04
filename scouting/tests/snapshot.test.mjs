@@ -48,6 +48,7 @@ function fakeRobot(overrides = {}) {
       ...overrides.events
     },
     teams:{
+      search:async options => { calls.teamSearchOptions=options; return fixtureTeams; },
       events:async (teamId, options, request) => {
         calls.history.push({teamId,options,request});
         return [{id:900+teamId,sku:"VE-V5-26-60000",name:"Override Tournament",start:"2026-09-01T09:00:00+10:00"}];
@@ -86,6 +87,17 @@ test("fetches one official event snapshot across all competition data sources",a
   assert.deepEqual(snapshot.sourceAvailability,{teams:true,skills:true,awards:true,matches:{Main:true},rankings:{Main:true}});
   assert.equal(snapshot.liveStatus,"event_feed");
   assert.equal(new Date(snapshot.fetchedAt).toISOString(),"2026-11-08T10:00:00.000Z");
+});
+
+test("event team endpoint failure recovers through registered team search",async()=>{
+  const {robot,calls}=fakeRobot({events:{teams:async()=>{throw new Error("invalid event teams response");}}});
+  const load=createSnapshotLoader();
+  const snapshot=await load(robot,"VE-V5-26-66512");
+  assert.deepEqual(calls.teamSearchOptions,{events:[66512],registered:true});
+  assert.equal(snapshot.teams.length,2);
+  assert.equal(snapshot.sourceAvailability.teams,true);
+  assert.equal(snapshot.sourceRecoveries[0].method,"registered team search filtered to this event");
+  assert.equal(snapshot.sourceErrors.some(error=>error.source==="event teams"),false);
 });
 
 test("one failing source stays visible as a warning without discarding good event data",async()=>{
