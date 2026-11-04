@@ -8,7 +8,7 @@ The dashboard uses the official VEX Events API v2 through the community-maintain
 
 The function requires a VEX Events personal access token. The token is intentionally not stored in this repository and must never be added to browser JavaScript, `data.js`, commits, or chat.
 
-1. Sign in to your VEX Events account at https://events.vex.com/ and create a personal API token in the account's developer/API settings.
+1. Sign in to your VEX Events account at https://events.vex.com/ and create a personal access token using the account controls provided there. The @v5x/events documentation confirms that a personal access token is required, but does not specify a fixed menu path: https://docs.v5x.dev/events/overview/.
 2. Open the Netlify project **1831m-states-scouting-2026**.
 3. Go to **Project configuration → Environment variables**.
 4. Add `VEX_EVENTS_TOKEN`; set it as a secret and give it the **Functions** scope (or All scopes).
@@ -16,6 +16,16 @@ The function requires a VEX Events personal access token. The token is intention
 6. Open the dashboard and press refresh. The connection indicator should change to **VEX feed live**.
 
 Do not paste the token into this repository or share it with anyone. If the VEX API token is unavailable, the dashboard will clearly say that the live feed is not connected rather than inventing results.
+
+## Scouting intelligence
+
+The Scout intelligence view connects the three evidence layers:
+
+- **Historical baseline:** earlier-season W–L–T, average points, margin, CCWM, threat tier and confidence.
+- **Live competition:** current event rankings, scored matches and alliance score trends. The analysis flags meaningful gaps against baseline and compares the latest three scored alliance outcomes with the preceding three when there is enough evidence.
+- **Human scouting:** scouts can record team-specific observations for robot capability, autonomous, reliability, mechanisms, driver behaviour, strategy and alliance compatibility.
+
+Signals are prompts for scouts, not verdicts. Alliance scores are shared by two robots and cannot establish individual contribution. Human observations currently save in the browser that recorded them; they are not synchronised between scouts or devices.
 
 ## Live refresh behaviour
 
