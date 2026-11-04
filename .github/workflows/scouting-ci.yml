@@ -41,18 +41,35 @@ jobs:
             process.exit(1);
           }
           const snapshot = payload.snapshot;
+          const failures = [];
+          if (snapshot.event?.sku !== "VE-V5-26-66512") failures.push("Unexpected event SKU");
+          if (!Array.isArray(snapshot.teams) || snapshot.teams.length === 0) failures.push("Registered team roster is empty");
+          if (snapshot.sourceAvailability?.teams !== true) failures.push("Registered team source is unavailable");
+          if (!Array.isArray(snapshot.awards)) failures.push("Awards collection is not an array");
+          if (snapshot.sourceAvailability?.awards !== true) failures.push("Awards source is unavailable");
+          const divisions = snapshot.event?.divisions || [];
+          if (!divisions.length) failures.push("Event has no published divisions");
+          for (const division of divisions) {
+            const key = division.name || String(division.id || "unknown");
+            if (snapshot.sourceAvailability?.matches?.[key] !== true) failures.push("Match feed unavailable for " + key);
+            if (snapshot.sourceAvailability?.rankings?.[key] !== true) failures.push("Ranking feed unavailable for " + key);
+          }
+          if (failures.length) {
+            console.error("Production VEX feed integrity check failed:", failures.join("; "));
+            process.exit(1);
+          }
           console.log(JSON.stringify({
             ok: true,
-            event: snapshot.event?.sku,
-            teams: snapshot.teams?.length,
-            matches: snapshot.matches?.length,
-            rankings: snapshot.rankings?.length,
-            skills: snapshot.skills?.length,
-            awards: snapshot.awards?.length,
+            event: snapshot.event.sku,
+            teams: snapshot.teams.length,
+            matches: snapshot.matches?.length ?? 0,
+            rankings: snapshot.rankings?.length ?? 0,
+            skills: snapshot.skills?.length ?? 0,
+            awards: snapshot.awards.length,
             fetchedAt: snapshot.fetchedAt,
-            sourceErrors: snapshot.sourceErrors || [],
             sourceAvailability: snapshot.sourceAvailability || {},
-            divisions: snapshot.event?.divisions || [],
-            sourceRecoveries: snapshot.sourceRecoveries || []
+            divisions,
+            sourceRecoveries: snapshot.sourceRecoveries || [],
+            integrity: "event, roster, awards and every division feed verified"
           }));
           NODE
