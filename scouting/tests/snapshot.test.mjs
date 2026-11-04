@@ -65,7 +65,7 @@ test("fetches one official event snapshot across all competition data sources",a
   const snapshot=await load(robot,"VE-V5-26-66512");
   assert.equal(calls.sku[0],"VE-V5-26-66512");
   assert.deepEqual(calls.teams,[66512]);
-  assert.deepEqual(calls.teamOptions,{registered:true});
+  assert.equal(calls.teamOptions,undefined);
   assert.deepEqual(calls.matches,[[66512,3]]);
   assert.deepEqual(calls.rankings,[[66512,3]]);
   assert.equal(calls.skills,1);
@@ -93,7 +93,7 @@ test("event team endpoint failure recovers through registered team search",async
   const {robot,calls}=fakeRobot({events:{teams:async()=>{throw new Error("invalid event teams response");}}});
   const load=createSnapshotLoader();
   const snapshot=await load(robot,"VE-V5-26-66512");
-  assert.deepEqual(calls.teamSearchOptions,{events:[66512],registered:true});
+  assert.deepEqual(calls.teamSearchOptions,{events:[66512]});
   assert.equal(snapshot.teams.length,2);
   assert.equal(snapshot.sourceAvailability.teams,true);
   assert.equal(snapshot.sourceRecoveries[0].method,"registered team search filtered to this event");
