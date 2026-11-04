@@ -175,3 +175,15 @@ test("archived profile rows expose rank, skills breakdown and event source links
   assert.match(html,/Autonomous Win Point \(separate from the 12-point bonus\)/);
   assert.match(html,/At least 7 alliance Pins Placed/);
 });
+
+test("1831M profile contains source-referenced alliance match evidence", async () => {
+  const vm = await import("node:vm");
+  const context = {window:{}};
+  vm.runInNewContext(dataSource, context);
+  const matches = context.window.SCOUTING_DATA.teams.find(team=>team.id==="1831M").dossier.notableMatches;
+  assert.equal(matches.length,2);
+  assert.equal(matches[0].scoreFor,140);
+  assert.deepEqual(Array.from(matches[0].partners),["1940X"]);
+  assert.equal(matches[1].scoreAgainst,78);
+  assert.match(app,/Notable archived match evidence/);
+});
