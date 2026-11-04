@@ -78,11 +78,28 @@ export function createSnapshotLoader({historyTtlMs = 10 * 60_000, now = () => Da
       }
     };
 
-    const [teams,skills,awards] = await Promise.all([
+    let [teams,skills,awards] = await Promise.all([
       collect("event teams",robot.events.teams(event.id,{registered:true}),sourceAvailability,"teams"),
       collect("skills",robot.events.skills(event.id),sourceAvailability,"skills"),
       collect("awards",robot.events.awards(event.id),sourceAvailability,"awards")
     ]);
+
+    const sourceRecoveries = [];
+    if (!sourceAvailability.teams || teams.length === 0) {
+      try {
+        const searchedTeams = await robot.teams.search({events:[event.id],registered:true});
+        if (searchedTeams.length > 0) {
+          teams = searchedTeams;
+          sourceAvailability.teams = true;
+          sourceRecoveries.push({source:"event teams",method:"registered team search filtered to this event",count:searchedTeams.length});
+          for (let index=errors.length-1; index>=0; index--) {
+            if (errors[index].source === "event teams") errors.splice(index,1);
+          }
+        }
+      } catch (error) {
+        if (!sourceAvailability.teams) errors.push({source:"event team search fallback",status:error?.status || null,message:error?.message || "Fallback team search failed"});
+      }
+    }
 
     const divisions = await mapLimit(event.divisions || [],3,async division => {
       const divisionKey = division.name || String(division.id || "unknown");
@@ -118,6 +135,7 @@ export function createSnapshotLoader({historyTtlMs = 10 * 60_000, now = () => Da
       eventCount:Object.values(history.byTeam || {}).reduce((sum,items) => sum + items.length,0)
     };
     snapshot.sourceErrors = errors;
+    snapshot.sourceRecoveries = sourceRecoveries;
     snapshot.sourceAvailability = sourceAvailability;
     snapshot.liveStatus = event.ongoing === true ? "in_progress" : "event_feed";
     return snapshot;
