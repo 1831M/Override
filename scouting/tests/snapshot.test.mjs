@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {createSnapshotLoader} from "../netlify/functions/lib/fetch-snapshot.mjs";
+import {normalizeTeamCollectionResponse} from "../netlify/functions/lib/normalize-team-response.mjs";
 
 const fixtureEvent = {
   id:66512, sku:"VE-V5-26-66512", name:"NSW State Championships",
@@ -58,6 +59,22 @@ function fakeRobot(overrides = {}) {
   };
   return {robot,calls};
 }
+
+test("normalizes null optional venue fields without mutating VEX team data",()=>{
+  const original={meta:{total:1},data:[{id:1,number:"1831M",location:{venue:null,city:"Sydney",coordinates:{lat:-33.8,lon:151.1}}}]};
+  const result=normalizeTeamCollectionResponse(original);
+  assert.equal(result.normalizedRows,1);
+  assert.equal("venue" in result.body.data[0].location,false);
+  assert.equal(result.body.data[0].location.city,"Sydney");
+  assert.equal(result.body.data[0].location.coordinates.lat,-33.8);
+  assert.equal(original.data[0].location.venue,null);
+});
+test("leaves already valid and non-team collection responses unchanged",()=>{
+  const valid={meta:{total:1},data:[{id:1,number:"1831M",location:{venue:"Main Hall"}}]};
+  assert.deepEqual(normalizeTeamCollectionResponse(valid),{body:valid,normalizedRows:0});
+  const other={data:"not-an-array"};
+  assert.deepEqual(normalizeTeamCollectionResponse(other),{body:other,normalizedRows:0});
+});
 
 test("fetches one official event snapshot across all competition data sources",async()=>{
   const {robot,calls}=fakeRobot();
