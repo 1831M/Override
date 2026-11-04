@@ -1,7 +1,9 @@
+import { buildWatchlistScheduleRows } from "./watchlist.mjs";
+
 (() => {
   "use strict";
 
-  const buildWatchlistRows = window.OverrideWatchlist.buildWatchlistScheduleRows;
+  const buildWatchlistRows = buildWatchlistScheduleRows;
 
   const $ = selector => document.querySelector(selector);
   const state = {

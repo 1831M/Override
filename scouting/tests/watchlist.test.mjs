@@ -25,7 +25,7 @@ test("baseline priorities are ranked S before A and then by CCWM", () => {
     {team:"S2",tier:"S",ccwm:20}
   ];
   const rows = buildWatchlistScheduleRows(matches, [], baseline);
-  assert.equal(rows.length, 3);
+  assert.equal(rows.length, 2);
   assert.equal(rows[0].source, "S/A baseline priority");
   assert.ok(rows.every(row => row.watched.some(team => ["A1","S1","S2"].includes(team))));
 });

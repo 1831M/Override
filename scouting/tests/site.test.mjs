@@ -18,8 +18,8 @@ test("every direct app id selector exists in the page", () => {
 });
 
 test("browser application parses as valid JavaScript", () => {
-  assert.match(html, /<script src="watchlist\.js"><\/script>/);
-  assert.match(app, /window\.OverrideWatchlist\.buildWatchlistScheduleRows/);
+  assert.match(html, /<script type="module" src="app\.js"><\/script>/);
+  assert.match(app, /from "\.\/watchlist\.mjs"/);
 });
 
 test("match search and CSV export controls are wired", () => {
