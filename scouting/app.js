@@ -457,13 +457,23 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
       return;
     }
     const history = snapshot.seasonHistory || {};
-    $("#source-health").textContent =
-      "Last successful pull: " + dateTime(snapshot.fetchedAt) +
-      " · VEX teams: " + snapshot.teams.length +
-      " · matches: " + snapshot.matches.length +
-      " · season-history checks: " + (history.checkedTeams || 0) + "/" + (history.totalTeams || 0) +
-      " · source warnings: " + (snapshot.sourceErrors || []).length +
-      ((snapshot.sourceRecoveries || []).length ? " · recovered feeds: " + snapshot.sourceRecoveries.map(item=>item.source+" ("+item.count+")").join(", ") : "") + ".";
+    const availability=snapshot.sourceAvailability||{};
+    const states=[
+      ["Registered teams",availability.teams],
+      ["Skills",availability.skills],
+      ["Awards",availability.awards],
+      ...Object.entries(availability.matches||{}).map(([name,ok])=>["Matches · "+name,ok]),
+      ...Object.entries(availability.rankings||{}).map(([name,ok])=>["Rankings · "+name,ok])
+    ];
+    const stateLabel=value=>value===true?"Available":value===false?"Unavailable":"Not checked";
+    const stateClass=value=>value===true?"source-ok":value===false?"source-fail":"source-unknown";
+    const errors=(snapshot.sourceErrors||[]).map(error=>'<li><b>'+esc(error.source)+'</b><span>'+(error.status!=null?"HTTP "+esc(error.status)+" · ":"")+esc(error.message||"Source request failed")+'</span></li>').join("");
+    const recoveries=(snapshot.sourceRecoveries||[]).map(item=>esc(item.source)+" ("+num(item.count)+")").join(", ");
+    $("#source-health").innerHTML =
+      '<div class="source-health-summary"><b>Last API snapshot: '+esc(dateTime(snapshot.fetchedAt))+'</b><span>'+num(snapshot.teams.length)+' teams · '+num(snapshot.matches.length)+' matches · season history '+num(history.checkedTeams||0)+'/'+num(history.totalTeams||0)+' teams checked</span></div>'+
+      '<div class="source-health-grid">'+states.map(([name,value])=>'<div class="'+stateClass(value)+'"><span>'+esc(name)+'</span><b>'+stateLabel(value)+'</b></div>').join("")+'</div>'+
+      (errors?'<details class="source-health-errors"><summary>'+num((snapshot.sourceErrors||[]).length)+' source error details</summary><ul>'+errors+'</ul></details>':'<p class="source-health-clean">No source errors recorded in this snapshot.</p>')+
+      (recoveries?'<p class="source-health-recovery">Recovered by fallback: '+recoveries+'</p>':'');
   }
 
   function renderLegacyPreview() {
