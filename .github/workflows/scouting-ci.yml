@@ -50,6 +50,8 @@ jobs:
             skills: snapshot.skills?.length,
             awards: snapshot.awards?.length,
             fetchedAt: snapshot.fetchedAt,
-            sourceErrors: snapshot.sourceErrors?.length
+            sourceErrors: snapshot.sourceErrors || [],
+            sourceAvailability: snapshot.sourceAvailability || {},
+            divisions: snapshot.event?.divisions || []
           }));
           NODE
