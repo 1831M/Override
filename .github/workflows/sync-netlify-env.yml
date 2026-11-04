@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   sync:
-    name: Update Netlify production secret and deploy
+    name: Update Netlify production variable and deploy
     runs-on: ubuntu-latest
     env:
       NETLIFY_SITE_ID: 5699a25b-dbd2-4f37-b16e-598922ef6cec
@@ -54,11 +54,10 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           VEX_EVENTS_TOKEN: ${{ secrets.VEX_EVENTS_TOKEN }}
         run: |
-          # The Netlify Free plan does not support per-scope variables.
-          # Use the default all-scopes setting so the serverless function can read it.
+          # Use the default all-scopes setting supported by this Netlify project.
+          # The value is still stored in Netlify's encrypted environment-variable store.
           npx --yes netlify-cli@latest env:set VEX_EVENTS_TOKEN "$VEX_EVENTS_TOKEN" \
             --context production \
-            --secret \
             --force \
             --site "$NETLIFY_SITE_ID" \
             --auth "$NETLIFY_AUTH_TOKEN"
