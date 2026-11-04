@@ -304,17 +304,31 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
       '<tr><td><b class="table-team">' + esc(row.team) + '</b></td><td>' + row.w + '–' + row.l + '–' + row.t + '</td><td>' + (row.w + row.l + row.t) + '</td><td>' + num(row.win) + '%</td><td>' + num(row.forAvg) + '</td><td>' + num(row.againstAvg) + '</td><td>' + signed(row.margin) + '</td><td><b>' + signed(row.ccwm) + '</b></td><td><span class="confidence-tag ' + esc(row.confidence.toLowerCase()) + '">' + esc(row.confidence) + '</span></td><td><span class="tier-tag tier-' + esc(row.tier.toLowerCase()) + '">' + esc(row.tier) + '</span></td></tr>'
     ).join("") || '<tr><td colspan="10" class="table-empty">No teams match these filters.</td></tr>';
     $("#season-count").textContent = rows.length + " of " + data.metrics.length + " teams · Source: " + data.source + " · Checked " + data.checked + ". " + data.note;
-    const renderBars = (target, key, formatter) => {
-      const top = [...data.metrics].sort((a,b) => b[key] - a[key]).slice(0,8);
-      const max = Math.max(1,...top.map(row => Math.abs(row[key])));
-      $(target).innerHTML = top.map(row => {
-        const value = Number(row[key]);
-        const width = Math.max(3,Math.abs(value) / max * 100);
-        return '<div class="season-bar-row"><b>' + esc(row.team) + '</b><div class="season-bar-track"><i class="' + (value < 0 ? 'negative' : 'positive') + '" style="width:' + width + '%"></i></div><strong>' + formatter(value) + '</strong></div>';
-      }).join("");
-    };
-    renderBars("#season-ccwm-chart","ccwm",signed);
-    renderBars("#season-margin-chart","margin",signed);
+    const metricSelect=$("#season-chart-metric"),orderSelect=$("#season-chart-order");
+    const key=metricSelect?.value||"ccwm",order=orderSelect?.value||"desc";
+    const format=value=>key==="win"?num(value)+"%":key==="forAvg"||key==="againstAvg"?num(value):signed(value);
+    const rows=[...data.metrics].sort((a,b)=>(order==="asc"?1:-1)*(Number(a[key])-Number(b[key]))).slice(0,12);
+    const max=Math.max(1,...rows.map(row=>Math.abs(Number(row[key]))));
+    const target=$("#season-metric-chart");
+    if(target)target.innerHTML=rows.map(row=>{
+      const value=Number(row[key]),width=Math.max(2,Math.abs(value)/max*100);
+      return '<button type="button" class="season-bar-row" data-chart-team="'+esc(row.team)+'" aria-label="Open '+esc(row.team)+' dossier, '+esc(format(value))+'"><b>'+esc(row.team)+'</b><span class="season-bar-track"><i class="'+(value<0?"negative":"positive")+'" style="width:'+width+'%"></i></span><strong>'+esc(format(value))+'</strong></button>';
+    }).join("");
+    const scatter=$("#season-scatter-chart");
+    if(scatter){
+      const W=560,H=300,L=48,R=18,T=18,B=42,PW=W-L-R,PH=H-T-B;
+      const xs=data.metrics.map(row=>Number(row.forAvg)),ys=data.metrics.map(row=>Number(row.againstAvg));
+      const xmin=Math.floor(Math.min(...xs)/10)*10,xmax=Math.ceil(Math.max(...xs)/10)*10;
+      const ymin=Math.floor(Math.min(...ys)/10)*10,ymax=Math.ceil(Math.max(...ys)/10)*10;
+      const px=value=>L+(value-xmin)/(xmax-xmin||1)*PW;
+      const py=value=>T+PH-(value-ymin)/(ymax-ymin||1)*PH;
+      const xTicks=Array.from({length:5},(_,i)=>xmin+(xmax-xmin)*i/4);
+      const yTicks=Array.from({length:5},(_,i)=>ymin+(ymax-ymin)*i/4);
+      const gridX=xTicks.map(v=>'<g><line x1="'+px(v)+'" y1="'+T+'" x2="'+px(v)+'" y2="'+(T+PH)+'" class="scatter-grid"/><text x="'+px(v)+'" y="'+(T+PH+17)+'" class="scatter-tick" text-anchor="middle">'+Math.round(v)+'</text></g>').join("");
+      const gridY=yTicks.map(v=>'<g><line x1="'+L+'" y1="'+py(v)+'" x2="'+(W-R)+'" y2="'+py(v)+'" class="scatter-grid"/><text x="'+(L-8)+'" y="'+(py(v)+3)+'" class="scatter-tick" text-anchor="end">'+Math.round(v)+'</text></g>').join("");
+      const dots=data.metrics.map(row=>'<g class="scatter-point" data-chart-team="'+esc(row.team)+'" role="button" tabindex="0" aria-label="Open '+esc(row.team)+' dossier: average for '+num(row.forAvg)+', average against '+num(row.againstAvg)+'"><title>'+esc(row.team)+' · For '+num(row.forAvg)+' · Against '+num(row.againstAvg)+'</title><circle cx="'+px(row.forAvg)+'" cy="'+py(row.againstAvg)+'" r="5.5"/><text x="'+(px(row.forAvg)+7)+'" y="'+(py(row.againstAvg)-7)+'">'+esc(row.team)+'</text></g>').join("");
+      scatter.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Scatter plot: average points for on horizontal axis, average points against on vertical axis">'+gridX+gridY+'<line x1="'+L+'" y1="'+(T+PH)+'" x2="'+(W-R)+'" y2="'+(T+PH)+'" class="scatter-axis"/><line x1="'+L+'" y1="'+T+'" x2="'+L+'" y2="'+(T+PH)+'" class="scatter-axis"/>'+dots+'<text x="'+(L+PW/2)+'" y="'+(H-5)+'" class="scatter-label" text-anchor="middle">Average points for →</text><text x="13" y="'+(T+PH/2)+'" class="scatter-label" text-anchor="middle" transform="rotate(-90 13 '+(T+PH/2)+')">Average points against →</text></svg>';
+    }
   }
 
   function renderHistoricalProfiles() {
@@ -794,6 +808,21 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     $("#season-search").addEventListener("input",renderSeasonSnapshot);
     $("#season-tier").addEventListener("change",renderSeasonSnapshot);
     $("#season-sort").addEventListener("change",renderSeasonSnapshot);
+    $("#season-chart-metric").addEventListener("change",renderSeasonSnapshot);
+    $("#season-chart-order").addEventListener("change",renderSeasonSnapshot);
+    const openChartTeam=team=>{
+      if(!team)return;
+      const search=$("#historical-profile-search"),tier=$("#historical-profile-tier");
+      if(search)search.value=team;
+      if(tier)tier.value="";
+      renderHistoricalProfiles();
+      const profile=[...$("#historical-profiles").querySelectorAll(".dossier-profile")].find(item=>item.querySelector(".team-code")?.textContent===team);
+      if(profile){profile.open=true;profile.scrollIntoView({behavior:"smooth",block:"center"});}
+    };
+    $("#season-metric-chart").addEventListener("click",event=>{const button=event.target.closest("[data-chart-team]");if(button)openChartTeam(button.dataset.chartTeam);});
+    $("#season-scatter-chart").addEventListener("click",event=>{const point=event.target.closest("[data-chart-team]");if(point)openChartTeam(point.dataset.chartTeam);});
+    $("#season-scatter-chart").addEventListener("keydown",event=>{const point=event.target.closest("[data-chart-team]");if(point&&(event.key==="Enter"||event.key===" ")){event.preventDefault();openChartTeam(point.dataset.chartTeam);}});
+
     $("#historical-profile-search").addEventListener("input",renderHistoricalProfiles);
     $("#historical-profile-tier").addEventListener("change",renderHistoricalProfiles);
     $("#historical-profiles").addEventListener("click",event=>{
