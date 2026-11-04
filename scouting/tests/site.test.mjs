@@ -187,3 +187,38 @@ test("1831M profile contains source-referenced alliance match evidence", async (
   assert.equal(matches[1].scoreAgainst,78);
   assert.match(app,/Notable archived match evidence/);
 });
+
+test("season snapshot wins, win rates and margins are mathematically consistent", async () => {
+  const vm = await import("node:vm");
+  const context = {window:{}};
+  vm.runInNewContext(dataSource, context);
+  const metrics=context.window.SCOUTING_DATA.seasonSnapshot.metrics;
+  assert.equal(metrics.length,24);
+  assert.equal(new Set(metrics.map(row=>row.team)).size,24);
+  for(const row of metrics){
+    const played=row.w+row.l+row.t;
+    assert.ok(played>0,row.team+" has no matches");
+    assert.equal(Math.round(row.w/played*100),row.win,row.team+" win rate mismatch");
+    assert.ok(Math.abs((row.forAvg-row.againstAvg)-row.margin)<0.11,row.team+" margin mismatch");
+  }
+});
+test("every archived event reference resolves and skills totals reconcile", async () => {
+  const vm = await import("node:vm");
+  const context = {window:{}};
+  vm.runInNewContext(dataSource, context);
+  const data=context.window.SCOUTING_DATA;
+  const sources=new Set(data.sources.map(source=>source.id));
+  assert.equal(data.teams.length,24);
+  assert.equal(new Set(data.teams.map(team=>team.id)).size,24);
+  for(const team of data.teams)for(const event of team.events){
+    assert.ok(sources.has(event.event),team.id+" has an unknown event source");
+    if(event.skills!=null && event.driver!=null && event.auton!=null){
+      assert.equal(event.driver+event.auton,event.skills,team.id+" skills total mismatch");
+    }
+  }
+});
+test("1831M focused assessment attributes the 140 score to the alliance", () => {
+  assert.match(html,/alliance that scored 140–30/);
+  assert.match(html,/not an individual robot score/);
+  assert.match(html,/Vantage Scout event archive lists the Design Award/);
+});
