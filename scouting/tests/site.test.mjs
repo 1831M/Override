@@ -227,3 +227,13 @@ test("human scouting observations can record optional scout initials", () => {
   assert.match(html,/id="observation-scout"/);
   assert.match(app,/scout:\$\("#observation-scout"\)\.value\.trim\(\)\.slice\(0,6\)/);
 });
+
+test("historical charts have metric and ordering controls plus an interactive scoring scatter plot", () => {
+  assert.match(html,/id="season-chart-metric"/);
+  assert.match(html,/id="season-chart-order"/);
+  assert.match(html,/id="season-scatter-chart"/);
+  assert.match(app,/function renderSeasonSnapshot/);
+  assert.match(app,/data-chart-team/);
+  assert.match(app,/openChartTeam/);
+  assert.match(css,/\.scatter-point:hover circle/);
+});
