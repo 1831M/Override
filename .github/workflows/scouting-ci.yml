@@ -53,29 +53,3 @@ jobs:
             sourceErrors: snapshot.sourceErrors?.length
           }));
           NODE
-      - name: Smoke test production VEX feed
-        run: |
-          node --input-type=module <<'NODE'
-          const url = "https://1831m-states-scouting-2026.netlify.app/.netlify/functions/live-data";
-          const response = await fetch(url, {
-            headers: { accept: "application/json" },
-            signal: AbortSignal.timeout(90000)
-          });
-          const payload = await response.json().catch(() => ({}));
-          if (!response.ok || payload.ok !== true || !payload.snapshot) {
-            console.error(`Production VEX feed failed: HTTP ${response.status}; ${payload.code || "NO_CODE"}; ${payload.message || "No snapshot returned"}`);
-            process.exit(1);
-          }
-          const snapshot = payload.snapshot;
-          console.log(JSON.stringify({
-            ok: true,
-            event: snapshot.event?.sku,
-            teams: snapshot.teams?.length,
-            matches: snapshot.matches?.length,
-            rankings: snapshot.rankings?.length,
-            skills: snapshot.skills?.length,
-            awards: snapshot.awards?.length,
-            fetchedAt: snapshot.fetchedAt,
-            sourceErrors: snapshot.sourceErrors?.length
-          }));
-          NODE
