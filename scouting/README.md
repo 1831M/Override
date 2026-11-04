@@ -48,6 +48,7 @@ Signals are prompts for scouts, not verdicts. Alliance scores are shared by two 
 - The production smoke test records per-source availability and division metadata so an incomplete upstream response can be diagnosed without exposing credentials.
 - Safe response-shape diagnostics are included in the CI smoke output when a VEX collection fails schema validation.
 - Team collection diagnostics report only field names and data types, never team records or API credentials.
+- A post-deploy CI smoke test verifies the live event feed against the production alias.
 - The function keeps a short in-memory snapshot cache to avoid duplicate API requests.
 - Team season history is refreshed at most once per 10 minutes per warm function instance.
 - The browser stores the last successful official snapshot locally. If the API is temporarily unavailable, that snapshot is shown with its original update time and a stale-data label.
