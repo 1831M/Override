@@ -394,6 +394,7 @@
     $("#skills-table").innerHTML = '<div class="empty-state">Live skills data not connected.</div>';
     $("#awards-list").innerHTML = '<div class="empty-state">Live awards data not connected.</div>';
     renderSeasonSnapshot();
+    renderIntelligence();
     $("#overview-caption").textContent = "Saved roster preview · no live data";
     renderSources();
   }
@@ -452,6 +453,23 @@
       if (live.scoredMatches >= 2 && diff <= -15) signals.push({team:base.team,level:"warning",title:"Below historical scoring baseline",detail:"Current event alliance average " + actual.toFixed(1) + " vs historical " + expected.toFixed(1) + " (−" + Math.abs(diff).toFixed(1) + "). Watch another match before concluding decline."});
       else if (live.scoredMatches >= 2 && diff >= 15) signals.push({team:base.team,level:"positive",title:"Above historical scoring baseline",detail:"Current event alliance average " + actual.toFixed(1) + " vs historical " + expected.toFixed(1) + " (+" + diff.toFixed(1) + "). Possible emerging threat; inspect robot contribution."});
       if (live.scoredMatches >= 3 && live.winRate != null && live.winRate < Math.max(20,base.win-30)) signals.push({team:base.team,level:"warning",title:"Results lag historical win rate",detail:"Current event win rate " + live.winRate.toFixed(1) + "% vs season baseline " + base.win + "%. Check match strength and alliance context."});
+    }
+    // Compare recent alliance outcomes with earlier outcomes for each team.
+    const matchRows = (state.snapshot?.matches || []).filter(m=>m.scored);
+    for (const base of baseline) {
+      const rows = matchRows.filter(m=>(m.redTeams||[]).includes(String(base.team)) || (m.blueTeams||[]).includes(String(base.team)));
+      if (rows.length < 6) continue;
+      const outcomes = rows.map(m=>{
+        const red=(m.redTeams||[]).includes(String(base.team));
+        const own=Number(red?m.redScore:m.blueScore), opp=Number(red?m.blueScore:m.redScore);
+        return Number.isFinite(own)&&Number.isFinite(opp)?own:null;
+      }).filter(v=>v!=null);
+      if(outcomes.length<6) continue;
+      const prior=outcomes.slice(-6,-3), recent=outcomes.slice(-3);
+      const priorAvg=prior.reduce((a,b)=>a+b,0)/prior.length, recentAvg=recent.reduce((a,b)=>a+b,0)/recent.length;
+      const delta=recentAvg-priorAvg;
+      if(delta>=12) signals.push({team:base.team,level:"positive",title:"Recent scoring trend rising",detail:"Last 3 alliance scores average "+recentAvg.toFixed(1)+" vs "+priorAvg.toFixed(1)+" across the previous 3 (+"+delta.toFixed(1)+"). Shared alliance scores; verify individual contribution."});
+      if(delta<=-12) signals.push({team:base.team,level:"warning",title:"Recent scoring trend falling",detail:"Last 3 alliance scores average "+recentAvg.toFixed(1)+" vs "+priorAvg.toFixed(1)+" across the previous 3 ("+delta.toFixed(1)+"). Check match context before judging robot decline."});
     }
     const signalBox=$("#intel-signals");
     signalBox.innerHTML=signals.length ? signals.sort((a,b)=>(a.level==="warning"?0:1)-(b.level==="warning"?0:1)).slice(0,12).map(s=>'<div class="intel-item '+s.level+'"><div><b>'+esc(s.team)+' · '+esc(s.title)+'</b><p>'+esc(s.detail)+'</p></div></div>').join("") : '<div class="empty-state">'+(state.snapshot ? "No significant baseline deviation detected yet. This is not proof that teams are performing as expected." : "Live results are not connected yet. Historical watch priorities are still available below.")+'</div>';
