@@ -127,7 +127,7 @@ test("failed team-history lookups are marked unchecked, not treated as no events
 
 
 test("a failed team roster feed is unknown, not a genuine empty roster",async()=>{
-  const {robot}=fakeRobot({events:{teams:async()=>{throw new Error("team roster timeout");}}});
+  const {robot}=fakeRobot({events:{teams:async()=>{throw new Error("team roster timeout");}},teams:{search:async()=>[]}});
   const load=createSnapshotLoader();
   const snapshot=await load(robot,"VE-V5-26-66512");
   assert.equal(snapshot.teams.length,0);
