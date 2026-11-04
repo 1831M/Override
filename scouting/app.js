@@ -307,10 +307,10 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     const metricSelect=$("#season-chart-metric"),orderSelect=$("#season-chart-order");
     const key=metricSelect?.value||"ccwm",order=orderSelect?.value||"desc";
     const format=value=>key==="win"?num(value)+"%":key==="forAvg"||key==="againstAvg"?num(value):signed(value);
-    const rows=[...data.metrics].sort((a,b)=>(order==="asc"?1:-1)*(Number(a[key])-Number(b[key]))).slice(0,12);
+    const chartRows=[...data.metrics].sort((a,b)=>(order==="asc"?1:-1)*(Number(a[key])-Number(b[key]))).slice(0,12);
     const max=Math.max(1,...rows.map(row=>Math.abs(Number(row[key]))));
     const target=$("#season-metric-chart");
-    if(target)target.innerHTML=rows.map(row=>{
+    if(target)target.innerHTML=chartRows.map(row=>{
       const value=Number(row[key]),width=Math.max(2,Math.abs(value)/max*100);
       return '<button type="button" class="season-bar-row" data-chart-team="'+esc(row.team)+'" aria-label="Open '+esc(row.team)+' dossier, '+esc(format(value))+'"><b>'+esc(row.team)+'</b><span class="season-bar-track"><i class="'+(value<0?"negative":"positive")+'" style="width:'+width+'%"></i></span><strong>'+esc(format(value))+'</strong></button>';
     }).join("");
