@@ -389,3 +389,17 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 .pinned-watch{border-left:3px solid #71957a;padding-left:10px}
 .watch-remove{border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:#fff;color:#8b6e64;font-size:8px;cursor:pointer}
 @media(max-width:600px){.watchlist-controls{align-items:stretch;flex-direction:column}.secondary-button{align-self:flex-start}}
+
+
+/* Watchlist fixture planner */
+.watch-schedule-surface{margin:14px 0}
+.watch-schedule-caption{margin:4px 0 0;color:#89968d;font-size:10px}
+.watchlist-schedule .table-scroll{max-height:430px}
+.watch-schedule-table{min-width:850px}
+.watch-schedule-table td{white-space:normal;line-height:1.45;vertical-align:top}
+.watch-schedule-table td:first-child b,.watch-schedule-table td:nth-child(3) b{display:block;color:#355243;font:700 11px "Space Grotesk"}
+.watch-schedule-table td small{font-size:8px;color:#9aa69d}
+@media(max-width:700px){
+  .watch-schedule-surface .surface-heading{align-items:flex-start;flex-direction:column}
+  .watch-schedule-table{min-width:760px}
+}
