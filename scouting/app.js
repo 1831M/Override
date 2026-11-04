@@ -370,7 +370,8 @@
       " · VEX teams: " + snapshot.teams.length +
       " · matches: " + snapshot.matches.length +
       " · season-history checks: " + (history.checkedTeams || 0) + "/" + (history.totalTeams || 0) +
-      " · source warnings: " + (snapshot.sourceErrors || []).length + ".";
+      " · source warnings: " + (snapshot.sourceErrors || []).length +
+      ((snapshot.sourceRecoveries || []).length ? " · recovered feeds: " + snapshot.sourceRecoveries.map(item=>item.source+" ("+item.count+")").join(", ") : "") + ".";
   }
 
   function renderLegacyPreview() {
