@@ -484,3 +484,19 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 .scatter-point:hover circle,.scatter-point:focus circle{r:8;fill:#315e42}
 .scatter-point text{font:8px sans-serif;fill:#4d6253;pointer-events:none}
 @media(max-width:900px){.season-charts-interactive{grid-template-columns:1fr}}
+
+.source-health-summary{display:grid;gap:5px;margin-bottom:12px}
+.source-health-summary>b{font:700 11px "Space Grotesk";color:#45634e}
+.source-health-summary>span{font-size:9px;color:#829087}
+.source-health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:7px;margin:10px 0}
+.source-health-grid>div{display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:8px}
+.source-health-grid>div span{color:#78867c}
+.source-health-grid>div b{font-size:8px}
+.source-health-grid .source-ok b{color:#36754b}
+.source-health-grid .source-fail b{color:#b45b4e}
+.source-health-grid .source-unknown b{color:#8b8d80}
+.source-health-errors{margin-top:10px;font-size:9px;color:#8e554a}
+.source-health-errors summary{cursor:pointer;font-weight:800}
+.source-health-errors ul{display:grid;gap:7px;margin:9px 0 0;padding-left:17px}
+.source-health-errors li span{display:block;margin-top:2px;color:#7c8780;line-height:1.5}
+.source-health-clean,.source-health-recovery{font-size:9px;color:#75847a;margin:8px 0 0}
