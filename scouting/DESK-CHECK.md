@@ -96,7 +96,7 @@ Alliance points are shared by the two robots on an alliance. They are not eviden
 
 ## UI and usability desk check
 
-- Six navigation views exist: Overview, Match centre, Rankings, Team directory, Skills & awards, Sources & method.
+- Seven navigation views exist: Overview, Scout intelligence, Match centre, Rankings, Team directory, Skills & awards, Sources & method.
 - All 81 direct JavaScript element selectors have matching HTML IDs.
 - Search and filters exist for team, organisation, ranking and division views.
 - Team cards open a keyboard-accessible native dialog.
@@ -104,6 +104,15 @@ Alliance points are shared by the two robots on an alliance. They are not eviden
 - Responsive CSS includes a mobile layout and reduced-motion handling.
 - Manual refresh and 60-second visible-tab refresh are wired.
 - API token is read only in the Netlify function. The browser contains no token value.
+
+## Scout intelligence desk check
+
+- Historical team baselines remain separate from official live event rankings.
+- Live alliance scoring is compared with earlier-season alliance scoring only as a directional signal, not as individual robot attribution.
+- Recent trend comparisons require at least six scored matches for a team and compare the latest three with the preceding three.
+- Human observations record category, assessment, notes and timestamp.
+- Observations are saved to browser local storage only; shared multi-scout sync and account attribution are not yet implemented.
+- The dashboard does not infer autonomous capability, mechanisms, reliability or driver quality from alliance scores. Those require direct human observation.
 
 ## Known boundaries
 
