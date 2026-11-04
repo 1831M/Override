@@ -52,7 +52,7 @@ test("watchlist fixture planner focuses upcoming matches and supports CSV export
 });
 
 test("all dashboard views and navigation targets exist", () => {
-  for (const view of ["overview","intelligence","matches","rankings","teams","skills","sources"]) {
+  for (const view of ["overview","intelligence","matches","rankings","history","teams","skills","sources"]) {
     assert.ok(html.includes('id="' + view + '"') || html.includes("id='" + view + "'"));
     assert.ok(html.includes('data-view="' + view + '"') || html.includes("data-view='" + view + "'"));
   }
@@ -85,4 +85,21 @@ test("scouting intelligence compares baseline with live match evidence", () => {
   assert.match(app, /Latest scout note/);
   assert.match(html, /id="observation-form"/);
   assert.match(html, /id="intel-signals"/);
+});
+
+test("historical dossier has a dedicated navigation view and event archive", () => {
+  assert.match(html, /data-view="history"[^>]*>Historical dossier/);
+  assert.match(html, /id="historical-event-table"/);
+  assert.match(html, /id="historical-event-search"/);
+  assert.match(html, /id="historical-event-filter"/);
+  assert.match(app, /function renderHistoricalEvents/);
+  assert.match(app, /renderHistoricalEvents\(\)/);
+  assert.match(app, /qual\.forAvg/);
+  assert.match(app, /legacy\?\.seasonSnapshot\?\.metrics/);
+});
+
+test("historical dossier renders without requiring a successful live API response", () => {
+  assert.match(app, /else if \(legacy\) \{\s*renderLegacyPreview\(\)/);
+  assert.match(app, /function renderLegacyPreview/);
+  assert.match(app, /renderHistoricalEvents\(\)/);
 });

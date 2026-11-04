@@ -66,9 +66,10 @@
       <button class="nav-tab" data-view="intelligence" type="button">Scout intelligence <span>02</span></button>
       <button class="nav-tab" data-view="matches" type="button">Match centre <span>03</span></button>
       <button class="nav-tab" data-view="rankings" type="button">Rankings <span>04</span></button>
-      <button class="nav-tab" data-view="teams" type="button">Team directory <span>05</span></button>
-      <button class="nav-tab" data-view="skills" type="button">Skills & awards <span>06</span></button>
-      <button class="nav-tab" data-view="sources" type="button">Sources & method <span>07</span></button>
+      <button class="nav-tab" data-view="history" type="button">Historical dossier <span>05</span></button>
+      <button class="nav-tab" data-view="teams" type="button">Team directory <span>06</span></button>
+      <button class="nav-tab" data-view="skills" type="button">Skills & awards <span>07</span></button>
+      <button class="nav-tab" data-view="sources" type="button">Sources & method <span>08</span></button>
     </nav>
 
     <section class="view" id="intelligence">
@@ -127,6 +128,10 @@
       <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="ranking-search" type="search" placeholder="Find a team…" aria-label="Search rankings"></div><select id="ranking-division" aria-label="Filter rankings by division"><option value="">All divisions</option></select><button class="text-button" id="export-rankings" type="button">Export CSV ↓</button></div>
       <div class="table-surface"><div class="table-scroll"><table><thead><tr><th>RANK</th><th>TEAM</th><th>W–L–T</th><th>WP</th><th>AP</th><th>SP</th><th>AVG PTS</th><th>HIGH SCORE</th></tr></thead><tbody id="ranking-table"><tr><td colspan="8" class="table-empty">Official ranking table has not loaded yet.</td></tr></tbody></table></div></div>
       <p class="fine-print">WP, AP and SP are shown as supplied in the official event ranking response. They are not recalculated from raw match scores.</p>
+    </section>
+
+    <section class="view" id="history">
+      <div class="section-heading"><div><span class="section-kicker">THE SCOUTING DOSSIER</span><h2>Historical dossier</h2><p>Earlier-season team performance and verified results from archived Override events. Kept separate from the live States leaderboard.</p></div><span class="live-caption">Historical evidence · 24-team baseline</span></div>
       <div class="section-heading lower-heading"><div><span class="section-kicker">SEASON INTELLIGENCE</span><h2>Full-field scouting baseline</h2><p>Earlier-season performance context for preparation — separate from official States rankings.</p></div><span class="live-caption">24 teams · snapshot 2 Nov 2026</span></div>
       <article class="surface season-intel">
         <div class="season-note"><b>How to read this:</b> CCWM is a third-party season metric, not a VEX ranking. Threat tiers are an analyst preparation label, not an official classification. Low sample confidence means treat the number cautiously.</div>
@@ -139,9 +144,16 @@
         <div class="season-charts"><div class="chart-panel"><div class="chart-heading"><b>CCWM leaders</b><span>Higher = stronger season signal</span></div><div id="season-ccwm-chart" class="season-bars"></div></div><div class="chart-panel"><div class="chart-heading"><b>Average score margin</b><span>Alliance points for minus against</span></div><div id="season-margin-chart" class="season-bars"></div></div></div>
         <p class="fine-print" id="season-count">Historical scouting snapshot. It does not update with the official live event feed.</p>
       </article>
+      <article class="surface season-intel">
+        <div class="surface-heading"><div><span class="tiny-kicker">EVENT-BY-EVENT RECORDS</span><h3>Archived tournament results</h3><p>Published team placings and match/skills metrics where verified in the archived event pages.</p></div><span class="unit-label" id="historical-event-count">Loading archive…</span></div>
+        <div class="toolbar season-toolbar"><div class="search-wrap"><span>⌕</span><input id="historical-event-search" type="search" placeholder="Search team or school…" aria-label="Search archived results"></div><select id="historical-event-filter" aria-label="Filter archived event"><option value="">All archived events</option></select></div>
+        <div class="table-surface"><div class="table-scroll"><table class="season-table"><thead><tr><th>EVENT</th><th>TEAM</th><th>RANK</th><th>W–L–T</th><th>WP</th><th>AP</th><th>SP</th><th>SKILLS</th><th>DRIVER</th><th>AUTON</th><th>ALLIANCE AVG FOR</th><th>AGAINST</th></tr></thead><tbody id="historical-event-table"><tr><td colspan="12" class="table-empty">Historical event records are loading.</td></tr></tbody></table></div></div>
+        <p class="fine-print" id="historical-event-note">Only values present in the archived source records are shown. A dash means that metric was not verified, not zero.</p>
+      </article>
+      <article class="surface"><div class="surface-heading"><div><span class="tiny-kicker">SOURCE ARCHIVE</span><h3>Original event references</h3></div></div><div id="historical-source-links" class="archive-links"></div></article>
     </section>
 
-    <section class="view" id="teams">
+    <section class="view" id="teams">    <section class="view" id="teams">
       <div class="section-heading"><div><span class="section-kicker">THE FIELD</span><h2>Team directory</h2><p>Open a team for event stats, season appearances and skills data.</p></div><span class="live-caption" id="team-count">0 teams</span></div>
       <div class="toolbar"><div class="search-wrap"><span>⌕</span><input id="team-search" type="search" placeholder="Search team number or school…" aria-label="Search teams"></div><select id="school-filter" aria-label="Filter teams by organisation"><option value="">All organisations</option></select></div>
       <div class="team-grid" id="team-grid"><div class="empty-state">Team cards will appear after the VEX event roster loads.</div></div>

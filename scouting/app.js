@@ -158,6 +158,7 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     renderMatches();
     renderRankings();
     renderSeasonSnapshot();
+    renderHistoricalEvents();
     renderIntelligence();
     renderTeams();
     renderSkills();
@@ -315,6 +316,39 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     renderBars("#season-margin-chart","margin",signed);
   }
 
+  function renderHistoricalEvents() {
+    const teams = legacy?.teams || [];
+    const eventMap = new Map((legacy?.sources || []).map(source => [source.id, source]));
+    const rows = teams.flatMap(team => (team.events || []).map(event => ({
+      team, event, source: eventMap.get(event.event)
+    }))).filter(row => row.source);
+    const search = ($("#historical-event-search")?.value || "").trim().toLowerCase();
+    const eventFilter = $("#historical-event-filter")?.value || "";
+    const filtered = rows.filter(row =>
+      (!eventFilter || row.event.event === eventFilter) &&
+      (!search || [row.team.id,row.team.school,row.source.name].join(" ").toLowerCase().includes(search))
+    ).sort((a,b) => a.source.date.localeCompare(b.source.date) || String(a.team.id).localeCompare(String(b.team.id),undefined,{numeric:true}));
+    const filter = $("#historical-event-filter");
+    if (filter) {
+      const current = filter.value;
+      filter.innerHTML = '<option value="">All archived events</option>' + (legacy?.sources || []).map(source =>
+        '<option value="' + esc(source.id) + '"' + (source.id === current ? " selected" : "") + '>' + esc(source.name) + '</option>'
+      ).join("");
+    }
+    const cell = value => value == null || value === "" ? "—" : esc(value);
+    const body = $("#historical-event-table");
+    if (body) body.innerHTML = filtered.map(row => {
+      const event = row.event, qual = event.qualAlliance || {};
+      return '<tr><td><b>' + esc(row.source.name) + '</b><small>' + esc(row.source.date) + '</small></td><td><b class="table-team">' + esc(row.team.id) + '</b><small>' + esc(row.team.school) + '</small></td><td>' + cell(event.rank) + '</td><td>' + cell(event.record) + '</td><td>' + cell(event.wp) + '</td><td>' + cell(event.ap) + '</td><td>' + cell(event.sp) + '</td><td>' + cell(event.skills) + '</td><td>' + cell(event.driver) + '</td><td>' + cell(event.auton) + '</td><td>' + cell(qual.forAvg == null ? null : Number(qual.forAvg).toFixed(1)) + '</td><td>' + cell(qual.againstAvg == null ? null : Number(qual.againstAvg).toFixed(1)) + '</td></tr>';
+    }).join("") || '<tr><td colspan="12" class="table-empty">No verified archived event records match this filter.</td></tr>';
+    const count = $("#historical-event-count");
+    if (count) count.textContent = filtered.length + " verified team-event records";
+    const links = $("#historical-source-links");
+    if (links) links.innerHTML = (legacy?.sources || []).map(source =>
+      '<a href="' + esc(source.url) + '" target="_blank" rel="noopener"><b>' + esc(source.name) + '</b><small>' + esc(source.date) + ' · open archived results ↗</small></a>'
+    ).join("") || '<span class="muted">No archived event links available.</span>';
+  }
+
   function renderTeams() {
     if (state.snapshot?.sourceAvailability?.teams === false) {
       $("#team-count").textContent = "Roster unavailable";
@@ -401,6 +435,7 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     $("#skills-table").innerHTML = '<div class="empty-state">Live skills data not connected.</div>';
     $("#awards-list").innerHTML = '<div class="empty-state">Live awards data not connected.</div>';
     renderSeasonSnapshot();
+    renderHistoricalEvents();
     renderIntelligence();
     $("#overview-caption").textContent = "Saved roster preview · no live data";
     renderSources();
@@ -719,6 +754,8 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     $("#season-search").addEventListener("input",renderSeasonSnapshot);
     $("#season-tier").addEventListener("change",renderSeasonSnapshot);
     $("#season-sort").addEventListener("change",renderSeasonSnapshot);
+    $("#historical-event-search").addEventListener("input",renderHistoricalEvents);
+    $("#historical-event-filter").addEventListener("change",renderHistoricalEvents);
     $("#team-search").addEventListener("input",renderTeams);
     $("#observation-team").addEventListener("focus",renderIntelligence);
     $("#compare-team-a").addEventListener("change",renderTeamComparison);
