@@ -300,3 +300,22 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 .season-bar-track i.positive{background:#83b994}
 .season-bar-track i.negative{background:#d99b8d}
 @media(max-width:700px){.season-charts{grid-template-columns:1fr}.chart-heading{align-items:flex-start;flex-direction:column}}
+
+.intel-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.intel-signals{display:grid;gap:9px}
+.intel-item,.watch-row,.observation-row{padding:12px 13px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.intel-item b,.watch-row b,.observation-row b{font:700 11px "Space Grotesk";color:#405c49}
+.intel-item p,.observation-row p{margin:5px 0 0;font-size:10px;line-height:1.6;color:#7d8c81}
+.intel-item.warning{border-left:3px solid #d69a79}.intel-item.positive{border-left:3px solid #83b994}
+.watch-row{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.watch-row small,.observation-row small{display:block;margin-top:4px;font-size:9px;color:#87958b;line-height:1.5}
+.watch-row>span{font-size:9px;color:#829087;white-space:nowrap}
+.observation-surface{margin-bottom:14px}
+.observation-form{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+.observation-form label{display:grid;gap:6px;font-size:9px;font-weight:700;color:#718277}
+.observation-form select,.observation-form textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fbfcfa;color:var(--ink);font:inherit}
+.observation-wide{grid-column:1/-1}
+.observation-submit{border:0;cursor:pointer;justify-self:start}
+.observation-list{display:grid;gap:8px;margin-top:12px}
+.intel-explainer{font-size:11px;line-height:1.8;color:#75847a}
+@media(max-width:700px){.intel-grid{grid-template-columns:1fr}.observation-form{grid-template-columns:1fr}.observation-wide{grid-column:auto}}
