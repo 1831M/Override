@@ -56,6 +56,32 @@ export default async function handler(request) {
         metaKeys:Object.keys(meta),
         metaFieldTypes:Object.fromEntries(Object.entries(meta).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])),
         firstItemKeys:data[0] && typeof data[0] === "object" ? Object.keys(data[0]) : [],
+        firstItemFieldTypes:data[0] && typeof data[0] === "object" ? Object.fromEntries(Object.entries(data[0]).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])) : {},
+        firstItemGrade:data[0]?.grade ?? null,
+        firstItemLocationFieldTypes:data[0]?.location && typeof data[0].location === "object" ? Object.fromEntries(Object.entries(data[0].location).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])) : {},
+        firstItemCoordinatesFieldTypes:data[0]?.location?.coordinates && typeof data[0].location.coordinates === "object" ? Object.fromEntries(Object.entries(data[0].location.coordinates).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])) : {},
+        invalidTeamRows:data.map((team,index) => {
+          const issues=[];
+          if(typeof team.id!=="number")issues.push("id");
+          if(typeof team.number!=="string")issues.push("number");
+          if(!team.program||typeof team.program!=="object"||typeof team.program.id!=="number"||typeof team.program.name!=="string")issues.push("program");
+          for(const key of ["team_name","robot_name","organization"])if(team[key]!==undefined&&typeof team[key]!=="string")issues.push(key);
+          if(team.registered!==undefined&&typeof team.registered!=="boolean")issues.push("registered");
+          if(team.grade!==undefined&&!["College","High School","Middle School","Elementary School"].includes(team.grade))issues.push("grade");
+          if(team.location!==undefined&&team.location!==null){
+            if(typeof team.location!=="object"||Array.isArray(team.location))issues.push("location");
+            else {
+              for(const key of ["venue","address_1","city","country"])if(team.location[key]!==undefined&&typeof team.location[key]!=="string")issues.push("location."+key);
+              for(const key of ["address_2","region","postcode"])if(team.location[key]!==undefined&&team.location[key]!==null&&typeof team.location[key]!=="string")issues.push("location."+key);
+              if(team.location.coordinates!==undefined&&team.location.coordinates!==null){
+                const coordinates=team.location.coordinates;
+                if(typeof coordinates!=="object"||Array.isArray(coordinates))issues.push("location.coordinates");
+                else for(const key of ["lat","lon"])if(coordinates[key]!==undefined&&coordinates[key]!==null&&typeof coordinates[key]!=="number")issues.push("location.coordinates."+key);
+              }
+            }
+          }
+          return issues.length?{index,issues}:null;
+        }).filter(Boolean).slice(0,12),
         firstItemProgramType:data[0]?.program === null ? "null" : Array.isArray(data[0]?.program) ? "array" : typeof data[0]?.program,
         firstItemProgramKeys:data[0]?.program && typeof data[0].program === "object" ? Object.keys(data[0].program) : []
       });
