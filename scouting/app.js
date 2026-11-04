@@ -777,7 +777,7 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
       if (nav) nav.click();
     }));
     $("#refresh-button").addEventListener("click",() => refresh(true));
-    $("#observation-form").addEventListener("submit",event=>{event.preventDefault();const team=$("#observation-team").value;const notes=$("#observation-notes").value.trim();if(!team||!notes)return;const rows=readObservations();rows.push({team,category:$("#observation-category").value,rating:$("#observation-rating").value,notes,scout:"",createdAt:new Date().toISOString()});if(!saveObservations(rows)){showAlert("Could not save the observation in this browser. Check available storage.","warning");return;}$("#observation-notes").value="";renderIntelligence();});
+    $("#observation-form").addEventListener("submit",event=>{event.preventDefault();const team=$("#observation-team").value;const notes=$("#observation-notes").value.trim();if(!team||!notes)return;const rows=readObservations();rows.push({team,category:$("#observation-category").value,rating:$("#observation-rating").value,notes,scout:$("#observation-scout").value.trim().slice(0,6),createdAt:new Date().toISOString()});if(!saveObservations(rows)){showAlert("Could not save the observation in this browser. Check available storage.","warning");return;}$("#observation-notes").value="";renderIntelligence();});
     $("#match-filters").addEventListener("click",event => {
       const button = event.target.closest("[data-filter]");
       if (!button) return;
