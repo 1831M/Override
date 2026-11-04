@@ -125,3 +125,12 @@ test("historical profile grid supports search, tier filtering and source links",
   assert.match(app,/profileUrl/);
   assert.match(app,/p\.scoutFocus/);
 });
+
+test("historical dossier includes 1831M baseline and matchup decision support", () => {
+  assert.match(html,/1831M FOCUSED ASSESSMENT/);
+  assert.match(html,/28–17–2/);
+  assert.match(html,/OPR \/ DPR/);
+  assert.match(html,/MATCHUP PRIORITIES/);
+  assert.match(html,/1940H Carbon/);
+  assert.match(html,/Alliance selection logic/);
+});
