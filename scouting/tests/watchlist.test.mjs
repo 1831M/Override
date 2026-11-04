@@ -65,7 +65,7 @@ test("coverage summary identifies tracked teams with no published fixture", () =
 test("coverage summary counts fixtures with watched teams on both alliances", () => {
   const coverage = summarizeWatchlistCoverage(matches, [], [
     {team:"1831M",tier:"S",ccwm:20},
-    {team:"1940H",tier:"A",ccwm:10}
+    {team:"4613G",tier:"S",ccwm:10}
   ]);
   assert.equal(coverage.priorityTeams, 2);
   assert.equal(coverage.scheduledTeams, 2);
