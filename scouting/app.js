@@ -462,7 +462,7 @@
       const outcomes = rows.map(m=>{
         const red=(m.redTeams||[]).includes(String(base.team));
         const own=Number(red?m.redScore:m.blueScore), opp=Number(red?m.blueScore:m.redScore);
-        return Number.isFinite(own)&&Number.isFinite(opp)?own:null;
+        return m.redScore!=null&&m.blueScore!=null&&Number.isFinite(own)&&Number.isFinite(opp)?own:null;
       }).filter(v=>v!=null);
       if(outcomes.length<6) continue;
       const prior=outcomes.slice(-6,-3), recent=outcomes.slice(-3);
@@ -472,7 +472,7 @@
       if(delta<=-12) signals.push({team:base.team,level:"warning",title:"Recent scoring trend falling",detail:"Last 3 alliance scores average "+recentAvg.toFixed(1)+" vs "+priorAvg.toFixed(1)+" across the previous 3 ("+delta.toFixed(1)+"). Check match context before judging robot decline."});
     }
     for (const observation of observations.slice(-20)) {
-      signals.push({team:observation.team,level:observation.rating==="Weak"?"warning":"positive",title:"Human scout observation · "+observation.category,detail:observation.rating+" assessment: "+observation.notes});
+      signals.push({team:observation.team,level:observation.rating==="Weak"?"warning":(["Strong","Effective"].includes(observation.rating)?"positive":"neutral"),title:"Human scout observation · "+observation.category,detail:observation.rating+" assessment: "+observation.notes});
     }
     const signalBox=$("#intel-signals");
     signalBox.innerHTML=signals.length ? signals.sort((a,b)=>(a.level==="warning"?0:1)-(b.level==="warning"?0:1)).slice(0,12).map(s=>'<div class="intel-item '+s.level+'"><div><b>'+esc(s.team)+' · '+esc(s.title)+'</b><p>'+esc(s.detail)+'</p></div></div>').join("") : '<div class="empty-state">'+(state.snapshot ? "No significant baseline deviation detected yet. This is not proof that teams are performing as expected." : "Live results are not connected yet. Historical watch priorities are still available below.")+'</div>';
