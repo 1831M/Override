@@ -27,6 +27,7 @@ test("match search and CSV export controls are wired", () => {
   assert.match(html, /id="export-rankings"/);
   assert.match(app, /function exportMatchesCsv/);
   assert.match(app, /function exportRankingsCsv/);
+  assert.match(app, /output.innerHTML=make\(a.value\)\+make\(b.value\)/);
   assert.match(app, /match-search/);
 });
 
