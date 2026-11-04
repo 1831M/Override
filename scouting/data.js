@@ -13,7 +13,7 @@ window.SCOUTING_DATA = {
     ["1831G","The King's School",[{event:"kings-oct18",rank:16,record:"3-4-0",wp:6,ap:12,sp:313,vp:29.7,skills:28,driver:18,auton:10}]],
     ["1831H","The King's School",[{event:"kings-oct18",rank:22,record:"0-7-0",wp:0,ap:12,sp:176,vp:25.3,skills:28,driver:28,auton:0}]],
     ["1831K","The King's School",[{event:"kings-oct18",rank:15,record:"3-4-0",wp:6,ap:24,sp:258,vp:29.4,skills:36,driver:28,auton:8}]],
-    ["1831M","The King's School",[{event:"knox-sep27",rank:3,record:"7-1-0",wp:14,ap:78,sp:300,vp:33.9,qualAlliance:{matches:8,forAvg:87.2,againstAvg:41.4,diffAvg:45.9}}]],
+    ["1831M","The King's School",[{event:"knox-sep27",rank:3,record:"7-1-0",wp:14,ap:78,sp:300,vp:33.9,skills:86,driver:78,auton:8,qualAlliance:{matches:8,forAvg:87.2,againstAvg:41.4,diffAvg:45.9}}]],
     ["1831N","The King's School",[]],
     ["1831S","The King's School",[{event:"knox-sep27",rank:21,record:"2-6-0",wp:4,ap:24,sp:160,vp:27.7,qualAlliance:{matches:8,forAvg:28.1,againstAvg:84.8,diffAvg:-56.6}}]],
     ["1831V","The King's School",[{event:"knox-sep27",rank:18,record:"2-6-0",wp:4,ap:30,sp:230,vp:28.1,qualAlliance:{matches:8,forAvg:37.2,againstAvg:83.1,diffAvg:-45.9}}]],
@@ -36,8 +36,8 @@ window.SCOUTING_DATA = {
     ["93601Z","Shore",[{event:"kings-oct18",rank:1,record:"7-0-0",wp:14,ap:72,sp:478,vp:37.9,skills:206,driver:128,auton:78}]]
   ].map(([id,school,events]) => ({ id, school, events, dossier: DOSSIER_PROFILES[id] || null, eventAppearancesVerified: events.length, style: "Not yet verified from reviewed footage", notebook: null, footage: null, reliability: events.length ? "Results data only" : "Roster only" })),
   seasonSnapshot: {
-    source: "VEX Tracker", checked: "2026-11-02",
-    note: "Earlier-season aggregate snapshot for preparation. These are not official States rankings and are not live event results.",
+    source: "VEX Tracker", checked: "2026-11-02", profileUrl: "https://www.vrchq.app/team/1831M", methodologyUrl: "https://www.vrchq.app/help",
+    note: "Earlier-season aggregate snapshot for preparation. These are not official States rankings or live event results. VEX Tracker methodology says cross-event CCWM/OPR/DPR averages are not strictly comparable; treat the ordering as indicative only.",
     tiers: {"S":"Primary title threat in the earlier-season scouting model","A":"Serious threat or strong competitive team","B":"Competitive or situational threat","C":"Lower statistical signal in this snapshot; not a reason to ignore the team"},
     metrics: [
       {team:"1940H",w:52,l:9,t:2,win:82,forAvg:88.5,againstAvg:37.7,margin:50.8,ccwm:42.1,confidence:"High",tier:"S"},
