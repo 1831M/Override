@@ -1,5 +1,6 @@
 import { Robot } from "@v5x/events";
 import { createSnapshotLoader } from "./lib/fetch-snapshot.mjs";
+import { normalizeTeamCollectionResponse } from "./lib/normalize-team-response.mjs";
 
 const EVENT_SKU = "VE-V5-26-66512";
 const SNAPSHOT_TTL_MS = 20_000;
@@ -36,68 +37,34 @@ export default async function handler(request) {
     catch {}
   }
 
-  const sourceDiagnostics = [];
-  const diagnosticFetch = async (input, init) => {
+  const normalizedFetch = async (input, init) => {
     const response = await fetch(input, init);
     const url = new URL(input);
-    if (url.pathname.endsWith("/teams")) {
-      const body = await response.clone().json().catch(() => null);
-      const data = Array.isArray(body?.data) ? body.data : [];
-      const meta = body?.meta && typeof body.meta === "object" ? body.meta : {};
-      sourceDiagnostics.push({
-        path:url.pathname,
-        status:response.status,
-        contentType:response.headers.get("content-type") || "",
-        bodyType:Array.isArray(body) ? "array" : body === null ? "null" : typeof body,
-        topLevelKeys:body && typeof body === "object" ? Object.keys(body) : [],
-        dataType:Array.isArray(body?.data) ? "array" : typeof body?.data,
-        dataCount:data.length,
-        metaType:body?.meta === null ? "null" : Array.isArray(body?.meta) ? "array" : typeof body?.meta,
-        metaKeys:Object.keys(meta),
-        metaFieldTypes:Object.fromEntries(Object.entries(meta).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])),
-        firstItemKeys:data[0] && typeof data[0] === "object" ? Object.keys(data[0]) : [],
-        firstItemFieldTypes:data[0] && typeof data[0] === "object" ? Object.fromEntries(Object.entries(data[0]).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])) : {},
-        firstItemGrade:data[0]?.grade ?? null,
-        firstItemLocationFieldTypes:data[0]?.location && typeof data[0].location === "object" ? Object.fromEntries(Object.entries(data[0].location).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])) : {},
-        firstItemCoordinatesFieldTypes:data[0]?.location?.coordinates && typeof data[0].location.coordinates === "object" ? Object.fromEntries(Object.entries(data[0].location.coordinates).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])) : {},
-        invalidTeamRows:data.map((team,index) => {
-          const issues=[];
-          if(typeof team.id!=="number")issues.push("id");
-          if(typeof team.number!=="string")issues.push("number");
-          if(!team.program||typeof team.program!=="object"||typeof team.program.id!=="number"||typeof team.program.name!=="string")issues.push("program");
-          for(const key of ["team_name","robot_name","organization"])if(team[key]!==undefined&&typeof team[key]!=="string")issues.push(key);
-          if(team.registered!==undefined&&typeof team.registered!=="boolean")issues.push("registered");
-          if(team.grade!==undefined&&!["College","High School","Middle School","Elementary School"].includes(team.grade))issues.push("grade");
-          if(team.location!==undefined&&team.location!==null){
-            if(typeof team.location!=="object"||Array.isArray(team.location))issues.push("location");
-            else {
-              for(const key of ["venue","address_1","city","country"])if(team.location[key]!==undefined&&typeof team.location[key]!=="string")issues.push("location."+key);
-              for(const key of ["address_2","region","postcode"])if(team.location[key]!==undefined&&team.location[key]!==null&&typeof team.location[key]!=="string")issues.push("location."+key);
-              if(team.location.coordinates!==undefined&&team.location.coordinates!==null){
-                const coordinates=team.location.coordinates;
-                if(typeof coordinates!=="object"||Array.isArray(coordinates))issues.push("location.coordinates");
-                else for(const key of ["lat","lon"])if(coordinates[key]!==undefined&&coordinates[key]!==null&&typeof coordinates[key]!=="number")issues.push("location.coordinates."+key);
-              }
-            }
-          }
-          return issues.length?{index,issues}:null;
-        }).filter(Boolean).slice(0,12),
-        firstItemProgramType:data[0]?.program === null ? "null" : Array.isArray(data[0]?.program) ? "array" : typeof data[0]?.program,
-        firstItemProgramKeys:data[0]?.program && typeof data[0].program === "object" ? Object.keys(data[0].program) : []
-      });
-    }
-    return response;
+    if (!url.pathname.endsWith("/teams") || !response.ok) return response;
+
+    const original = await response.clone().json().catch(() => null);
+    const normalized = normalizeTeamCollectionResponse(original);
+    if (!normalized.normalizedRows) return response;
+
+    const headers = new Headers(response.headers);
+    headers.delete("content-length");
+    headers.delete("content-encoding");
+    headers.delete("transfer-encoding");
+    return new Response(JSON.stringify(normalized.body), {
+      status:response.status,
+      statusText:response.statusText,
+      headers
+    });
   };
   const robot = new Robot({
     token,
-    fetch:diagnosticFetch,
+    fetch:normalizedFetch,
     retry:{maxAttempts:2,maxDelayMs:8_000}
   });
 
   inFlight = loadSnapshot(robot, EVENT_SKU);
   try {
     const snapshot = await inFlight;
-    snapshot.sourceDiagnostics = sourceDiagnostics;
     cachedSnapshot = snapshot;
     cachedAt = Date.now();
     return json({ok:true,cached:false,snapshot});
