@@ -339,7 +339,12 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
       const record=m ? [m.w,m.l,m.t].join("–") : "—";
       const confidence=m?.confidence || "Unrated";
       const pinned=readPinnedTeams().includes(team.id);
-      const eventRows=(team.events||[]).map(e=>{const source=(legacy?.sources||[]).find(s=>s.id===e.event);return source?'<div class="profile-event-row"><b>'+esc(source.date)+'</b><span>'+esc(source.name)+'</span><strong>'+esc(e.record||"—")+'</strong></div>':"";}).join("");
+      const eventRows=(team.events||[]).map(e=>{
+        const source=(legacy?.sources||[]).find(s=>s.id===e.event);
+        if(!source)return "";
+        const stats=[e.rank!=null?"Rank #"+e.rank:null,e.wp!=null?"WP "+e.wp:null,e.ap!=null?"AP "+e.ap:null,e.skills!=null?"Skills "+e.skills+" ("+num(e.driver)+"D / "+num(e.auton)+"P)":null].filter(Boolean).join(" · ");
+        return '<div class="profile-event-row"><b>'+esc(source.date)+'</b><span><strong>'+esc(source.name)+'</strong><small>'+esc(e.record||"—")+(stats?" · "+esc(stats):"")+'</small></span><a href="'+esc(source.url)+'" target="_blank" rel="noopener">Source ↗</a></div>';
+      }).join("");
       return '<details class="dossier-profile"><summary class="dossier-profile-summary"><div class="dossier-profile-head"><div><span class="team-code">'+esc(team.id)+'</span><b>'+esc(p.displayName)+'</b><small>'+esc(team.school)+'</small></div><span class="tier-tag tier-'+esc(p.tier.toLowerCase())+'">'+esc(p.tier)+' PRIORITY</span></div>'+
         '<div class="dossier-profile-metrics">'+metric("RECORD",record)+metric("MATCHES",num(matches))+metric("WIN RATE",m?num(m.win)+"%":"—")+metric("AVG MARGIN",m?signed(m.margin):"—")+metric("CCWM",m?signed(m.ccwm):"—")+metric("CONFIDENCE",esc(confidence))+metric("OPR",p.opr==null?"—":num(p.opr))+metric("DPR",p.dpr==null?"—":num(p.dpr))+'</div><span class="profile-expand-hint">Open full scouting report <span aria-hidden="true">＋</span></span></summary>'+
         '<div class="dossier-profile-expanded"><div class="dossier-profile-copy"><b>Statistical assessment</b><p>'+esc(p.read)+'</p><b>What to scout</b><p>'+esc(p.scoutFocus)+'</p></div>'+
