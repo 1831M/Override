@@ -52,6 +52,7 @@ jobs:
             fetchedAt: snapshot.fetchedAt,
             sourceErrors: snapshot.sourceErrors || [],
             sourceAvailability: snapshot.sourceAvailability || {},
-            divisions: snapshot.event?.divisions || []
+            divisions: snapshot.event?.divisions || [],
+            sourceDiagnostics: snapshot.sourceDiagnostics || []
           }));
           NODE
