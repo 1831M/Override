@@ -13,7 +13,7 @@ The function requires a VEX Events personal access token. The token is intention
 1. Sign in to your VEX Events account at https://events.vex.com/ and create a personal access token using the account controls provided there. The `@v5x/events` documentation confirms that a personal access token is required, but does not specify a fixed menu path: https://docs.v5x.dev/events/overview/.
 2. Open the Netlify project **1831m-states-scouting-2026**.
 3. Go to **Project configuration → Environment variables**.
-4. Add `VEX_EVENTS_TOKEN`, set it as a secret, and use the **production** context. This project is on Netlify's Free plan, so leave the scope at its default **All scopes**; per-scope selection is not available on this plan.
+4. Add `VEX_EVENTS_TOKEN` in the **production** context and leave the scope at the default **All scopes**. In this project's current Free-plan configuration, Netlify rejects a Secrets Controller flag with the all-scopes setting, so use a standard environment variable. Netlify still encrypts stored environment variables at rest; its sensitive-variable policy also applies to detected sensitive values on public repositories.
 5. Trigger a new production deploy so the function receives the secret.
 6. Open the dashboard and press refresh. The connection indicator should change to **VEX feed live**.
 
@@ -24,7 +24,7 @@ The repository also includes **Sync VEX Events token to Netlify** under GitHub A
 - `VEX_EVENTS_TOKEN` — the VEX Events personal access token.
 - `NETLIFY_AUTH_TOKEN` — a Netlify personal access token.
 
-Then run the workflow manually from the Actions tab. It stores the VEX token as a secret in the Netlify production context (using the Free-plan-compatible default scope), runs the project checks, and triggers a production deploy.
+Then run the workflow manually from the Actions tab. It stores the VEX token in Netlify's encrypted production environment-variable store using the default all-scopes setting, runs the project checks, and triggers a production deploy. It does not mark the variable with the stricter write-only Secrets Controller flag.
 
 Do not paste tokens into this repository or expose them in browser code. If the VEX API token is unavailable, the dashboard will clearly say that the live feed is not connected rather than inventing results.
 
