@@ -154,6 +154,7 @@
     renderMatches();
     renderRankings();
     renderSeasonSnapshot();
+    renderIntelligence();
     renderTeams();
     renderSkills();
     renderSources();
@@ -428,6 +429,50 @@
     else dialog.setAttribute("open","");
   }
 
+
+  const OBSERVATION_KEY = "1831m-override-observations-v1";
+  function readObservations() {
+    try { return JSON.parse(localStorage.getItem(OBSERVATION_KEY) || "[]"); } catch { return []; }
+  }
+  function saveObservations(rows) {
+    try { localStorage.setItem(OBSERVATION_KEY, JSON.stringify(rows)); return true; } catch { return false; }
+  }
+  function renderIntelligence() {
+    const baseline = legacy?.seasonSnapshot?.metrics || [];
+    const stats = state.snapshot?.stats || [];
+    const byNumber = new Map(stats.map(row => [String(row.number),row]));
+    const observations = readObservations();
+    const signals = [];
+    for (const base of baseline) {
+      const live = byNumber.get(String(base.team));
+      if (!live || !live.scoredMatches) continue;
+      const expected = Number(base.forAvg);
+      const actual = Number(live.allianceForAvg);
+      const diff = actual - expected;
+      if (live.scoredMatches >= 2 && diff <= -15) signals.push({team:base.team,level:"warning",title:"Below historical scoring baseline",detail:"Current event alliance average " + actual.toFixed(1) + " vs historical " + expected.toFixed(1) + " (−" + Math.abs(diff).toFixed(1) + "). Watch another match before concluding decline."});
+      else if (live.scoredMatches >= 2 && diff >= 15) signals.push({team:base.team,level:"positive",title:"Above historical scoring baseline",detail:"Current event alliance average " + actual.toFixed(1) + " vs historical " + expected.toFixed(1) + " (+" + diff.toFixed(1) + "). Possible emerging threat; inspect robot contribution."});
+      if (live.scoredMatches >= 3 && live.winRate != null && live.winRate < Math.max(20,base.win-30)) signals.push({team:base.team,level:"warning",title:"Results lag historical win rate",detail:"Current event win rate " + live.winRate.toFixed(1) + "% vs season baseline " + base.win + "%. Check match strength and alliance context."});
+    }
+    const signalBox=$("#intel-signals");
+    signalBox.innerHTML=signals.length ? signals.sort((a,b)=>(a.level==="warning"?0:1)-(b.level==="warning"?0:1)).slice(0,12).map(s=>'<div class="intel-item '+s.level+'"><div><b>'+esc(s.team)+' · '+esc(s.title)+'</b><p>'+esc(s.detail)+'</p></div></div>').join("") : '<div class="empty-state">'+(state.snapshot ? "No significant baseline deviation detected yet. This is not proof that teams are performing as expected." : "Live results are not connected yet. Historical watch priorities are still available below.")+'</div>';
+    const watch = [...baseline].sort((a,b)=>({S:0,A:1,B:2,C:3}[a.tier]-({S:0,A:1,B:2,C:3}[b.tier]))).slice(0,8);
+    $("#watchlist").innerHTML=watch.map(row=>{
+      const live=byNumber.get(String(row.team));
+      const obs=observations.filter(o=>o.team===row.team).length;
+      const liveText=live?.scoredMatches ? " · "+live.scoredMatches+" live matches, "+(live.allianceForAvg==null?"—":live.allianceForAvg.toFixed(1))+" avg alliance points" : " · No live match evidence yet";
+      return '<div class="watch-row"><div><b>'+esc(row.team)+'</b><small>Tier '+esc(row.tier)+' · '+esc(row.confidence)+' confidence'+esc(liveText)+'</small></div><span>'+obs+' scout note'+(obs===1?"":"s")+'</span></div>';
+    }).join("") || '<div class="empty-state">No baseline teams loaded.</div>';
+    const select=$("#observation-team");
+    if(select) {
+      const current=select.value;
+      const teams=state.snapshot?.teams || (legacy?.teams || []).map(t=>({number:t.id,organization:t.school}));
+      select.innerHTML='<option value="">Choose a team</option>'+teams.map(t=>'<option value="'+esc(t.number)+'">'+esc(t.number)+' · '+esc(t.organization||"")+'</option>').join("");
+      select.value=current;
+    }
+    const list=$("#observation-list");
+    if(list) list.innerHTML=observations.length ? [...observations].reverse().slice(0,30).map(o=>'<div class="observation-row"><div><b>'+esc(o.team)+' · '+esc(o.category)+' · '+esc(o.rating)+'</b><small>'+esc(new Date(o.createdAt).toLocaleString("en-AU"))+'</small><p>'+esc(o.notes)+'</p></div></div>').join("") : '<div class="empty-state">No human scouting observations recorded yet.</div>';
+  }
+
   function setupControls() {
     document.querySelectorAll(".nav-tab").forEach(button => button.addEventListener("click", () => {
       document.querySelectorAll(".nav-tab,.view").forEach(element => element.classList.remove("active"));
@@ -441,6 +486,7 @@
       if (nav) nav.click();
     }));
     $("#refresh-button").addEventListener("click",() => refresh(true));
+    $("#observation-form").addEventListener("submit",event=>{event.preventDefault();const team=$("#observation-team").value;const notes=$("#observation-notes").value.trim();if(!team||!notes)return;const rows=readObservations();rows.push({team,category:$("#observation-category").value,rating:$("#observation-rating").value,notes,createdAt:new Date().toISOString()});if(!saveObservations(rows)){showAlert("Could not save the observation in this browser. Check available storage.","warning");return;}$("#observation-notes").value="";renderIntelligence();});
     $("#match-filters").addEventListener("click",event => {
       const button = event.target.closest("[data-filter]");
       if (!button) return;
@@ -455,6 +501,7 @@
     $("#season-tier").addEventListener("change",renderSeasonSnapshot);
     $("#season-sort").addEventListener("change",renderSeasonSnapshot);
     $("#team-search").addEventListener("input",renderTeams);
+    $("#observation-team").addEventListener("focus",renderIntelligence);
     $("#school-filter").addEventListener("change",renderTeams);
     $("#team-grid").addEventListener("click",event => {
       const button = event.target.closest("[data-team]");
