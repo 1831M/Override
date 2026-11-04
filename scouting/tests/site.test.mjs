@@ -21,7 +21,7 @@ test("browser application parses as valid JavaScript", () => {
   assert.doesNotThrow(() => new Function(app));
 });
 
-test("all six dashboard views and navigation targets exist", () => {
+test("all dashboard views and navigation targets exist", () => {
   for (const view of ["overview","intelligence","matches","rankings","teams","skills","sources"]) {
     assert.ok(html.includes('id="' + view + '"') || html.includes("id='" + view + "'"));
     assert.ok(html.includes('data-view="' + view + '"') || html.includes("data-view='" + view + "'"));
@@ -41,7 +41,7 @@ test("live endpoint uses the VEX Events package and keeps token server-side", ()
   assert.doesNotMatch(app, /Bearer /);
   assert.match(app, /POLL_MS = 60_000/);
   assert.match(app, /divisionFeedComplete/);
-  assert.match(app, /sourceAvailability?\.skills === false/);
+  assert.match(app, /sourceAvailability\?\.skills === false/);
   assert.match(app, /team roster could not be loaded/);
 });
 
