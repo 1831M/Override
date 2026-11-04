@@ -471,14 +471,20 @@
       if(delta>=12) signals.push({team:base.team,level:"positive",title:"Recent scoring trend rising",detail:"Last 3 alliance scores average "+recentAvg.toFixed(1)+" vs "+priorAvg.toFixed(1)+" across the previous 3 (+"+delta.toFixed(1)+"). Shared alliance scores; verify individual contribution."});
       if(delta<=-12) signals.push({team:base.team,level:"warning",title:"Recent scoring trend falling",detail:"Last 3 alliance scores average "+recentAvg.toFixed(1)+" vs "+priorAvg.toFixed(1)+" across the previous 3 ("+delta.toFixed(1)+"). Check match context before judging robot decline."});
     }
+    for (const observation of observations.slice(-20)) {
+      signals.push({team:observation.team,level:observation.rating==="Weak"?"warning":"positive",title:"Human scout observation · "+observation.category,detail:observation.rating+" assessment: "+observation.notes});
+    }
     const signalBox=$("#intel-signals");
     signalBox.innerHTML=signals.length ? signals.sort((a,b)=>(a.level==="warning"?0:1)-(b.level==="warning"?0:1)).slice(0,12).map(s=>'<div class="intel-item '+s.level+'"><div><b>'+esc(s.team)+' · '+esc(s.title)+'</b><p>'+esc(s.detail)+'</p></div></div>').join("") : '<div class="empty-state">'+(state.snapshot ? "No significant baseline deviation detected yet. This is not proof that teams are performing as expected." : "Live results are not connected yet. Historical watch priorities are still available below.")+'</div>';
     const watch = [...baseline].sort((a,b)=>({S:0,A:1,B:2,C:3}[a.tier]-({S:0,A:1,B:2,C:3}[b.tier]))).slice(0,8);
     $("#watchlist").innerHTML=watch.map(row=>{
       const live=byNumber.get(String(row.team));
-      const obs=observations.filter(o=>o.team===row.team).length;
+      const teamNotes=observations.filter(o=>o.team===row.team);
+      const obs=teamNotes.length;
       const liveText=live?.scoredMatches ? " · "+live.scoredMatches+" live matches, "+(live.allianceForAvg==null?"—":live.allianceForAvg.toFixed(1))+" avg alliance points" : " · No live match evidence yet";
-      return '<div class="watch-row"><div><b>'+esc(row.team)+'</b><small>Tier '+esc(row.tier)+' · '+esc(row.confidence)+' confidence'+esc(liveText)+'</small></div><span>'+obs+' scout note'+(obs===1?"":"s")+'</span></div>';
+      const reason=row.ccwm>=20?"High historical CCWM and strong season signal":row.win>=70?"High historical win rate":row.margin>=15?"Strong historical average margin":row.confidence==="Low"?"Low sample confidence — verify with more observations":"Worth checking against current robot performance";
+      const humanText=teamNotes.length?" · Latest scout note: "+teamNotes[teamNotes.length-1].category+" ("+teamNotes[teamNotes.length-1].rating+")":" · No human observations yet";
+      return '<div class="watch-row"><div><b>'+esc(row.team)+'</b><small>Tier '+esc(row.tier)+' · '+esc(row.confidence)+' confidence · '+esc(reason)+esc(liveText)+esc(humanText)+'</small></div><span>'+obs+' scout note'+(obs===1?"":"s")+'</span></div>';
     }).join("") || '<div class="empty-state">No baseline teams loaded.</div>';
     const select=$("#observation-team");
     if(select) {
