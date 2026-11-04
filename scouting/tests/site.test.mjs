@@ -2,11 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const [html, app, css, functionSource] = await Promise.all([
+const [html, app, css, functionSource, dataSource] = await Promise.all([
   readFile(new URL("../index.html", import.meta.url), "utf8"),
   readFile(new URL("../app.js", import.meta.url), "utf8"),
   readFile(new URL("../styles.css", import.meta.url), "utf8"),
-  readFile(new URL("../netlify/functions/live-data.mjs", import.meta.url), "utf8")
+  readFile(new URL("../netlify/functions/live-data.mjs", import.meta.url), "utf8"),
+  readFile(new URL("../data.js", import.meta.url), "utf8")
 ]);
 
 test("every direct app id selector exists in the page", () => {
@@ -102,4 +103,25 @@ test("historical dossier renders without requiring a successful live API respons
   assert.match(app, /else if \(legacy\) \{\s*renderLegacyPreview\(\)/);
   assert.match(app, /function renderLegacyPreview/);
   assert.match(app, /renderHistoricalEvents\(\)/);
+});
+
+test("full dossier profile data covers all 24 registered State teams", async () => {
+  const vm = await import("node:vm");
+  const context = {window:{}};
+  vm.runInNewContext(dataSource, context);
+  const teams = context.window.SCOUTING_DATA.teams;
+  assert.equal(teams.length,24);
+  assert.equal(teams.filter(team => team.dossier?.read && team.dossier?.scoutFocus && team.dossier?.profileUrl).length,24);
+  assert.equal(teams.find(team => team.id==="1940H").dossier.tier,"S");
+  assert.equal(teams.find(team => team.id==="1831M").dossier.opr,42.8);
+  assert.equal(teams.find(team => team.id==="1831M").dossier.dpr,24.1);
+});
+
+test("historical profile grid supports search, tier filtering and source links", () => {
+  assert.match(html,/id="historical-profiles"/);
+  assert.match(html,/id="historical-profile-search"/);
+  assert.match(html,/id="historical-profile-tier"/);
+  assert.match(app,/function renderHistoricalProfiles/);
+  assert.match(app,/profileUrl/);
+  assert.match(app,/p\.scoutFocus/);
 });

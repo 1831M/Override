@@ -159,6 +159,7 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     renderRankings();
     renderSeasonSnapshot();
     renderHistoricalEvents();
+    renderHistoricalProfiles();
     renderIntelligence();
     renderTeams();
     renderSkills();
@@ -314,6 +315,36 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     };
     renderBars("#season-ccwm-chart","ccwm",signed);
     renderBars("#season-margin-chart","margin",signed);
+  }
+
+  function renderHistoricalProfiles() {
+    const teams = legacy?.teams || [];
+    const metrics = new Map((legacy?.seasonSnapshot?.metrics || []).map(row => [String(row.team),row]));
+    const query = ($("#historical-profile-search")?.value || "").trim().toLowerCase();
+    const tier = $("#historical-profile-tier")?.value || "";
+    const profiles = teams.filter(team => {
+      const profile = team.dossier;
+      return profile && (!tier || profile.tier === tier) &&
+        (!query || [team.id,team.school,profile.displayName,profile.read,profile.scoutFocus].join(" ").toLowerCase().includes(query));
+    }).sort((a,b) => {
+      const rank = {S:0,A:1,B:2,C:3};
+      return rank[a.dossier.tier]-rank[b.dossier.tier] || (metrics.get(b.id)?.ccwm ?? -999)-(metrics.get(a.id)?.ccwm ?? -999);
+    });
+    const target = $("#historical-profiles");
+    if (!target) return;
+    const metric = (label,value) => '<div><small>'+label+'</small><b>'+value+'</b></div>';
+    target.innerHTML = profiles.map(team => {
+      const p=team.dossier, m=metrics.get(team.id);
+      const matches=m ? m.w+m.l+m.t : null;
+      const record=m ? [m.w,m.l,m.t].join("–") : "—";
+      const confidence=m?.confidence || "Unrated";
+      return '<article class="dossier-profile"><div class="dossier-profile-head"><div><span class="team-code">'+esc(team.id)+'</span><b>'+esc(p.displayName)+'</b><small>'+esc(team.school)+'</small></div><span class="tier-tag tier-'+esc(p.tier.toLowerCase())+'">'+esc(p.tier)+' PRIORITY</span></div>'+
+        '<div class="dossier-profile-metrics">'+metric("RECORD",record)+metric("MATCHES",num(matches))+metric("WIN RATE",m?num(m.win)+"%":"—")+metric("AVG MARGIN",m?signed(m.margin):"—")+metric("CCWM",m?signed(m.ccwm):"—")+metric("CONFIDENCE",esc(confidence))+metric("OPR",p.opr==null?"—":num(p.opr))+metric("DPR",p.dpr==null?"—":num(p.dpr))+'</div>'+
+        '<div class="dossier-profile-copy"><b>Statistical assessment</b><p>'+esc(p.read)+'</p><b>What to scout</b><p>'+esc(p.scoutFocus)+'</p></div>'+
+        '<a class="source-link" href="'+esc(p.profileUrl)+'" target="_blank" rel="noopener">Open VEX Tracker team profile ↗</a></article>';
+    }).join("") || '<div class="empty-state">No team profiles match these filters.</div>';
+    const count=$("#historical-profile-count");
+    if(count) count.textContent=profiles.length+" of "+teams.filter(t=>t.dossier).length+" team profiles";
   }
 
   function renderHistoricalEvents() {
@@ -754,6 +785,8 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     $("#season-search").addEventListener("input",renderSeasonSnapshot);
     $("#season-tier").addEventListener("change",renderSeasonSnapshot);
     $("#season-sort").addEventListener("change",renderSeasonSnapshot);
+    $("#historical-profile-search").addEventListener("input",renderHistoricalProfiles);
+    $("#historical-profile-tier").addEventListener("change",renderHistoricalProfiles);
     $("#historical-event-search").addEventListener("input",renderHistoricalEvents);
     $("#historical-event-filter").addEventListener("change",renderHistoricalEvents);
     $("#team-search").addEventListener("input",renderTeams);

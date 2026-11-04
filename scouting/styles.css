@@ -403,3 +403,21 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
   .watch-schedule-surface .surface-heading{align-items:flex-start;flex-direction:column}
   .watch-schedule-table{min-width:760px}
 }
+
+/* Full historical dossier profiles */
+.dossier-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.dossier-profile{min-width:0;padding:15px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.dossier-profile-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dossier-profile-head>div{display:grid;gap:4px}
+.dossier-profile-head .team-code{font:800 17px "Space Grotesk";color:#355b43}
+.dossier-profile-head>div>b{font:700 11px "Space Grotesk";color:#5d7062}
+.dossier-profile-head small{font-size:9px;color:#8a988e}
+.dossier-profile-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:13px 0;padding:11px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.dossier-profile-metrics>div{display:grid;gap:4px;min-width:0}
+.dossier-profile-metrics small{font-size:7px;letter-spacing:.07em;color:#95a198;font-weight:800}
+.dossier-profile-metrics b{font:700 11px "Space Grotesk";color:#46614e;overflow-wrap:anywhere}
+.dossier-profile-copy{display:grid;gap:5px}
+.dossier-profile-copy>b{font:800 8px "Space Grotesk";letter-spacing:.08em;color:#718277;text-transform:uppercase}
+.dossier-profile-copy p{margin:0 0 8px;font-size:10px;line-height:1.65;color:#65756a}
+.dossier-profile .source-link{display:inline-block;margin-top:5px}
+@media(max-width:700px){.dossier-profile-grid{grid-template-columns:1fr}.dossier-profile-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
