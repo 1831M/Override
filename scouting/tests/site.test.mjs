@@ -51,6 +51,8 @@ test("scouting intelligence compares baseline with live match evidence", () => {
   assert.match(app, /Recent scoring trend rising/);
   assert.match(app, /Recent scoring trend falling/);
   assert.match(app, /OBSERVATION_KEY/);
+  assert.match(app, /Human scout observation/);
+  assert.match(app, /Latest scout note/);
   assert.match(html, /id="observation-form"/);
   assert.match(html, /id="intel-signals"/);
 });
