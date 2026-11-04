@@ -498,6 +498,7 @@
     const list=$("#observation-list");
     if(list) list.innerHTML=observations.length ? observations.map((o,index)=>({...o,_index:index})).reverse().slice(0,30).map(o=>'<div class="observation-row"><div class="observation-row-main"><b>'+esc(o.team)+' · '+esc(o.category)+' · '+esc(o.rating)+'</b><small>'+esc(new Date(o.createdAt).toLocaleString("en-AU"))+(o.scout?' · Scout '+esc(o.scout):"")+'</small><p>'+esc(o.notes)+'</p></div><button class="note-delete" type="button" data-delete-observation="'+o._index+'" aria-label="Delete observation">×</button></div>').join("") : '<div class="empty-state">No human scouting observations recorded yet.</div>';
     renderTeamComparison();
+    renderScoutSheet();
   }
 
 
@@ -524,6 +525,23 @@
     downloadCsv("1831M-override-rankings.csv",[["Rank","Team","Division","Wins","Losses","Ties","WP","AP","SP","Average points","High score"],...rows.map(r=>[r.rank,r.team,r.division,r.wins,r.losses,r.ties,r.wp,r.ap,r.sp,r.averagePoints,r.highScore])]);
     showAlert(rows.length+" ranking row(s) exported using the current filters.","info");
   }
+
+
+  function renderScoutSheet() {
+    const select=$("#scout-match-select"),preview=$("#scout-sheet-preview");
+    if(!select||!preview)return;
+    const matches=state.snapshot?.matches||[];
+    const current=select.value;
+    select.innerHTML=matches.length?matches.map((m,index)=>'<option value="'+esc(m.id)+'">'+esc(m.name)+' · '+esc(m.division)+' · '+(m.scored?"Scored":"Not scored")+'</option>').join(""):'<option value="">No official matches available</option>';
+    if(matches.some(m=>String(m.id)===current))select.value=current;
+    const match=matches.find(m=>String(m.id)===select.value);
+    if(!match){preview.innerHTML='<div class="empty-state">No match schedule is available to prepare a field sheet.</div>';return;}
+    const teamCard=(number,alliance)=>'<div class="paper-team"><div class="paper-team-head"><b>'+esc(number)+'</b><span>'+alliance+' alliance</span></div><div class="paper-checks"><label><input type="checkbox"> Autonomous routine</label><label><input type="checkbox"> Scoring cycle / consistency</label><label><input type="checkbox"> Endgame contribution</label><label><input type="checkbox"> Driver control / decision-making</label><label><input type="checkbox"> Reliability / faults</label><label><input type="checkbox"> Alliance interaction</label></div><div class="paper-lines"><span>Observed evidence / notes</span><i></i><i></i><i></i></div></div>';
+    const red=(match.redTeams||[]).map(number=>teamCard(number,"Red")).join("");
+    const blue=(match.blueTeams||[]).map(number=>teamCard(number,"Blue")).join("");
+    preview.innerHTML='<div class="print-sheet" id="scout-sheet-print"><div class="paper-title"><div><span>1831M · OVERRIDE 2026</span><h2>'+esc(match.name)+'</h2><p>'+esc(match.division)+(match.field?' · Field '+esc(match.field):'')+' · '+esc(dateTime(match.scheduled))+'</p></div><div class="paper-score">'+(match.scored?num(match.redScore)+' : '+num(match.blueScore):'NOT SCORED')+'</div></div><div class="paper-alliance-label">RED ALLIANCE</div><div class="paper-teams">'+(red||'<p>Teams not published</p>')+'</div><div class="paper-alliance-label blue-label">BLUE ALLIANCE</div><div class="paper-teams">'+(blue||'<p>Teams not published</p>')+'</div><div class="paper-bottom"><span>Scout: ____________________</span><span>Match outcome / key learning: ______________________________________________</span></div><p class="paper-disclaimer">Record what was observed. Do not infer individual scoring from shared alliance scores.</p></div>';
+  }
+
 
   function comparisonCard(number, team, stat, baseline, notes) {
     if (!team && !baseline) return '<div class="compare-card"><div class="empty-state">No team data available.</div></div>';
@@ -631,6 +649,8 @@
     $("#observation-team").addEventListener("focus",renderIntelligence);
     $("#compare-team-a").addEventListener("change",renderTeamComparison);
     $("#compare-team-b").addEventListener("change",renderTeamComparison);
+    $("#scout-match-select").addEventListener("change",renderScoutSheet);
+    $("#print-scout-sheet").addEventListener("click",()=>window.print());
     $("#export-observations").addEventListener("click",exportObservations);
     $("#import-observations").addEventListener("click",()=>$("#import-observations-file").click());
     $("#import-observations-file").addEventListener("change",event=>{importObservations(event.target.files?.[0]);event.target.value="";});
