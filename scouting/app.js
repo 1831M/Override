@@ -494,7 +494,81 @@
       select.value=current;
     }
     const list=$("#observation-list");
-    if(list) list.innerHTML=observations.length ? [...observations].reverse().slice(0,30).map(o=>'<div class="observation-row"><div><b>'+esc(o.team)+' · '+esc(o.category)+' · '+esc(o.rating)+'</b><small>'+esc(new Date(o.createdAt).toLocaleString("en-AU"))+'</small><p>'+esc(o.notes)+'</p></div></div>').join("") : '<div class="empty-state">No human scouting observations recorded yet.</div>';
+    if(list) list.innerHTML=observations.length ? observations.map((o,index)=>({...o,_index:index})).reverse().slice(0,30).map(o=>'<div class="observation-row"><div class="observation-row-main"><b>'+esc(o.team)+' · '+esc(o.category)+' · '+esc(o.rating)+'</b><small>'+esc(new Date(o.createdAt).toLocaleString("en-AU"))+(o.scout?' · Scout '+esc(o.scout):"")+'</small><p>'+esc(o.notes)+'</p></div><button class="note-delete" type="button" data-delete-observation="'+o._index+'" aria-label="Delete observation">×</button></div>').join("") : '<div class="empty-state">No human scouting observations recorded yet.</div>';
+    renderTeamComparison();
+  }
+
+
+  function comparisonCard(number, team, stat, baseline, notes) {
+    if (!team && !baseline) return '<div class="compare-card"><div class="empty-state">No team data available.</div></div>';
+    const title = number || "Unknown team";
+    const wlt = stat ? resultRecord(stat) : baseline ? [baseline.w,baseline.l,baseline.t].join("–") : "—";
+    const rank = stat?.rank != null ? "#" + stat.rank : "Not ranked";
+    const liveMatches = stat?.scoredMatches ?? 0;
+    const liveAvg = stat?.allianceForAvg == null ? "—" : stat.allianceForAvg.toFixed(1);
+    const win = stat?.winRate == null ? "—" : stat.winRate.toFixed(1) + "%";
+    const driver = stat?.driverSkills ?? "—";
+    const programming = stat?.programmingSkills ?? "—";
+    const skills = stat?.skillsTotal ?? "—";
+    const notesMarkup = notes.length ? notes.slice(-3).reverse().map(note => '<div class="compare-note"><b>'+esc(note.category)+' · '+esc(note.rating)+'</b><small>'+esc(note.notes)+'</small></div>').join("") : '<small class="compare-muted">No human observations recorded</small>';
+    return '<div class="compare-card"><div class="compare-team-head"><b>'+esc(title)+'</b><span>'+esc(team?.organization || team?.school || "Organisation not listed")+'</span></div><div class="compare-metrics"><div><small>EVENT RANK</small><b>'+esc(rank)+'</b></div><div><small>LIVE W–L–T</small><b>'+esc(wlt)+'</b></div><div><small>LIVE WIN RATE</small><b>'+esc(win)+'</b></div><div><small>LIVE ALLIANCE AVG</small><b>'+esc(liveAvg)+'</b></div><div><small>SCORED MATCHES</small><b>'+num(liveMatches)+'</b></div><div><small>SKILLS TOTAL</small><b>'+num(skills)+'</b></div><div><small>DRIVER / PROGRAMMING</small><b>'+num(driver)+' / '+num(programming)+'</b></div><div><small>HISTORICAL TIER</small><b>'+(baseline?esc(baseline.tier)+" · "+esc(baseline.confidence):"—")+'</b></div></div><div class="compare-notes"><b>Recent scout evidence</b>'+notesMarkup+'</div></div>';
+  }
+
+  function renderTeamComparison() {
+    const a=$("#compare-team-a"), b=$("#compare-team-b"), output=$("#comparison-output");
+    if(!a||!b||!output) return;
+    const teams=state.snapshot?.teams?.length ? state.snapshot.teams : (legacy?.teams||[]).map(t=>({number:t.id,organization:t.school}));
+    const sorted=[...teams].sort((x,y)=>String(x.number).localeCompare(String(y.number),undefined,{numeric:true}));
+    const options='<option value="">Choose team</option>'+sorted.map(t=>'<option value="'+esc(t.number)+'">'+esc(t.number)+' · '+esc(t.team_name||t.organization||"")+'</option>').join("");
+    const av=a.value, bv=b.value;
+    a.innerHTML=options; b.innerHTML=options;
+    a.value=sorted.some(t=>String(t.number)===av)?av:(sorted[0]?String(sorted[0].number):"");
+    b.value=sorted.some(t=>String(t.number)===bv)?bv:(sorted[1]?String(sorted[1].number):a.value);
+    const make=(number)=>{
+      const team=teams.find(t=>String(t.number)===number)||null;
+      const stat=statLookup().get(number)||null;
+      const base=legacy?.seasonSnapshot?.metrics?.find(row=>String(row.team)===number)||null;
+      const notes=readObservations().filter(o=>String(o.team)===number);
+      return comparisonCard(number,team,stat,base,notes);
+    };
+    if(!a.value||!b.value){output.innerHTML='<div class="empty-state">The comparison needs two registered teams.</div>';return;}
+    output.innerHTML='<div class="compare-vs">TEAM A</div>'+make(a.value)+'<div class="compare-vs">TEAM B</div>'+make(b.value);
+    if(a.value===b.value) output.insertAdjacentHTML("beforeend",'<p class="fine-print">Both selectors currently show the same team.</p>');
+  }
+
+  function exportObservations() {
+    const rows=readObservations();
+    const payload={format:"1831M-Override-scout-observations",version:1,exportedAt:new Date().toISOString(),observations:rows};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;link.download="1831M-scout-observations-"+new Date().toISOString().slice(0,10)+".json";
+    document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+    showAlert(rows.length+" scout observation(s) exported. Share the JSON file with the team to transfer notes between devices.","info");
+  }
+
+  async function importObservations(file) {
+    if(!file) return;
+    try {
+      const parsed=JSON.parse(await file.text());
+      const incoming=Array.isArray(parsed)?parsed:parsed?.observations;
+      if(!Array.isArray(incoming)) throw new Error("This file does not contain an observation list.");
+      const allowedCategories=["Robot capability","Autonomous","Reliability","Mechanism","Driver behaviour","Strategy","Alliance compatibility"];
+      const allowedRatings=["Strong","Effective","Mixed","Weak","Not observed"];
+      const valid=incoming.filter(o=>o&&typeof o==="object"&&String(o.team||"").trim()&&allowedCategories.includes(o.category)&&allowedRatings.includes(o.rating)&&typeof o.notes==="string"&&o.notes.trim()&&o.notes.length<=1200).map(o=>({
+        team:String(o.team).slice(0,32),category:o.category,rating:o.rating,notes:o.notes.trim(),
+        scout:typeof o.scout==="string"?o.scout.slice(0,32):"",
+        createdAt:Number.isFinite(Date.parse(o.createdAt))?new Date(o.createdAt).toISOString():new Date().toISOString()
+      }));
+      if(!valid.length) throw new Error("No valid observations were found in that file.");
+      const current=readObservations();
+      const keys=new Set(current.map(o=>[o.team,o.category,o.rating,o.notes,o.createdAt].join("|")));
+      const additions=valid.filter(o=>{const key=[o.team,o.category,o.rating,o.notes,o.createdAt].join("|");if(keys.has(key))return false;keys.add(key);return true;});
+      const merged=[...current,...additions].slice(-500);
+      if(!saveObservations(merged)) throw new Error("Browser storage could not save the imported notes.");
+      renderIntelligence();
+      showAlert(additions.length+" new observation(s) imported; "+(valid.length-additions.length)+" duplicate(s) skipped.","info");
+    } catch(error) { showAlert("Import failed: "+error.message,"warning"); }
   }
 
   function setupControls() {
@@ -510,7 +584,7 @@
       if (nav) nav.click();
     }));
     $("#refresh-button").addEventListener("click",() => refresh(true));
-    $("#observation-form").addEventListener("submit",event=>{event.preventDefault();const team=$("#observation-team").value;const notes=$("#observation-notes").value.trim();if(!team||!notes)return;const rows=readObservations();rows.push({team,category:$("#observation-category").value,rating:$("#observation-rating").value,notes,createdAt:new Date().toISOString()});if(!saveObservations(rows)){showAlert("Could not save the observation in this browser. Check available storage.","warning");return;}$("#observation-notes").value="";renderIntelligence();});
+    $("#observation-form").addEventListener("submit",event=>{event.preventDefault();const team=$("#observation-team").value;const notes=$("#observation-notes").value.trim();if(!team||!notes)return;const rows=readObservations();rows.push({team,category:$("#observation-category").value,rating:$("#observation-rating").value,notes,scout:"",createdAt:new Date().toISOString()});if(!saveObservations(rows)){showAlert("Could not save the observation in this browser. Check available storage.","warning");return;}$("#observation-notes").value="";renderIntelligence();});
     $("#match-filters").addEventListener("click",event => {
       const button = event.target.closest("[data-filter]");
       if (!button) return;
@@ -526,6 +600,12 @@
     $("#season-sort").addEventListener("change",renderSeasonSnapshot);
     $("#team-search").addEventListener("input",renderTeams);
     $("#observation-team").addEventListener("focus",renderIntelligence);
+    $("#compare-team-a").addEventListener("change",renderTeamComparison);
+    $("#compare-team-b").addEventListener("change",renderTeamComparison);
+    $("#export-observations").addEventListener("click",exportObservations);
+    $("#import-observations").addEventListener("click",()=>$("#import-observations-file").click());
+    $("#import-observations-file").addEventListener("change",event=>{importObservations(event.target.files?.[0]);event.target.value="";});
+    $("#observation-list").addEventListener("click",event=>{const button=event.target.closest("[data-delete-observation]");if(!button)return;const index=Number(button.dataset.deleteObservation);const rows=readObservations();if(Number.isInteger(index)&&index>=0&&index<rows.length){rows.splice(index,1);saveObservations(rows);renderIntelligence();showAlert("Observation deleted from this device.","info");}});
     $("#school-filter").addEventListener("change",renderTeams);
     $("#team-grid").addEventListener("click",event => {
       const button = event.target.closest("[data-team]");
