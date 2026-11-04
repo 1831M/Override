@@ -458,3 +458,10 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 .profile-event-row span strong{font-size:9px;color:#526b58}
 .profile-event-row small{font-size:8px;color:#819087;line-height:1.5}
 .profile-event-row>a{font-size:8px;font-weight:800;color:#557a5d;white-space:nowrap}
+
+.notable-match-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.notable-match-row>div{display:grid;gap:4px;min-width:0}
+.notable-match-row>div>b{font:700 10px "Space Grotesk";color:#4e6855}
+.notable-match-row small{font-size:8px;color:#839087;line-height:1.5}
+.notable-match-row>strong{flex:0 0 auto;text-align:right;font:700 15px "Space Grotesk";color:#385c44}
+.notable-match-row>strong small{display:block;margin-top:2px;font:700 8px "Space Grotesk";text-transform:uppercase}
