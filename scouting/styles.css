@@ -450,3 +450,11 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 .game-rule-grid b{font:700 18px "Space Grotesk";color:#385c44}
 .game-rule-grid small{font-size:8px;color:#7c8c80;line-height:1.4}
 @media(max-width:700px){.source-audit-panel{flex-direction:column}.game-rule-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-actions .source-link{margin-left:0}.profile-event-row{grid-template-columns:72px 1fr auto}}
+
+.game-rule-callout{display:grid;gap:6px;margin:12px 0;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:#f5f8f5}
+.game-rule-callout b{font:700 11px "Space Grotesk";color:#385c44}
+.game-rule-callout span{font-size:10px;line-height:1.65;color:#66766b}
+.profile-event-row span{display:grid;gap:3px}
+.profile-event-row span strong{font-size:9px;color:#526b58}
+.profile-event-row small{font-size:8px;color:#819087;line-height:1.5}
+.profile-event-row>a{font-size:8px;font-weight:800;color:#557a5d;white-space:nowrap}
