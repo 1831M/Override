@@ -222,3 +222,8 @@ test("1831M focused assessment attributes the 140 score to the alliance", () => 
   assert.match(html,/not an individual robot score/);
   assert.match(html,/Vantage Scout event archive lists the Design Award/);
 });
+
+test("human scouting observations can record optional scout initials", () => {
+  assert.match(html,/id="observation-scout"/);
+  assert.match(app,/scout:\$\("#observation-scout"\)\.value\.trim\(\)\.slice\(0,6\)/);
+});
