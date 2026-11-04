@@ -36,14 +36,42 @@ export default async function handler(request) {
     catch {}
   }
 
+  const sourceDiagnostics = [];
+  const diagnosticFetch = async (input, init) => {
+    const response = await fetch(input, init);
+    const url = new URL(input);
+    if (url.pathname.endsWith("/teams")) {
+      const body = await response.clone().json().catch(() => null);
+      const data = Array.isArray(body?.data) ? body.data : [];
+      const meta = body?.meta && typeof body.meta === "object" ? body.meta : {};
+      sourceDiagnostics.push({
+        path:url.pathname,
+        status:response.status,
+        contentType:response.headers.get("content-type") || "",
+        bodyType:Array.isArray(body) ? "array" : body === null ? "null" : typeof body,
+        topLevelKeys:body && typeof body === "object" ? Object.keys(body) : [],
+        dataType:Array.isArray(body?.data) ? "array" : typeof body?.data,
+        dataCount:data.length,
+        metaType:body?.meta === null ? "null" : Array.isArray(body?.meta) ? "array" : typeof body?.meta,
+        metaKeys:Object.keys(meta),
+        metaFieldTypes:Object.fromEntries(Object.entries(meta).map(([key,value]) => [key,value === null ? "null" : Array.isArray(value) ? "array" : typeof value])),
+        firstItemKeys:data[0] && typeof data[0] === "object" ? Object.keys(data[0]) : [],
+        firstItemProgramType:data[0]?.program === null ? "null" : Array.isArray(data[0]?.program) ? "array" : typeof data[0]?.program,
+        firstItemProgramKeys:data[0]?.program && typeof data[0].program === "object" ? Object.keys(data[0].program) : []
+      });
+    }
+    return response;
+  };
   const robot = new Robot({
     token,
+    fetch:diagnosticFetch,
     retry:{maxAttempts:2,maxDelayMs:8_000}
   });
 
   inFlight = loadSnapshot(robot, EVENT_SKU);
   try {
     const snapshot = await inFlight;
+    snapshot.sourceDiagnostics = sourceDiagnostics;
     cachedSnapshot = snapshot;
     cachedAt = Date.now();
     return json({ok:true,cached:false,snapshot});
