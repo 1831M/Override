@@ -8,14 +8,25 @@ The dashboard uses the official VEX Events API v2 through the community-maintain
 
 The function requires a VEX Events personal access token. The token is intentionally not stored in this repository and must never be added to browser JavaScript, `data.js`, commits, or chat.
 
-1. Sign in to your VEX Events account at https://events.vex.com/ and create a personal access token using the account controls provided there. The @v5x/events documentation confirms that a personal access token is required, but does not specify a fixed menu path: https://docs.v5x.dev/events/overview/.
+### Direct Netlify setup
+
+1. Sign in to your VEX Events account at https://events.vex.com/ and create a personal access token using the account controls provided there. The `@v5x/events` documentation confirms that a personal access token is required, but does not specify a fixed menu path: https://docs.v5x.dev/events/overview/.
 2. Open the Netlify project **1831m-states-scouting-2026**.
 3. Go to **Project configuration → Environment variables**.
-4. Add `VEX_EVENTS_TOKEN`; set it as a secret and give it the **Functions** scope (or All scopes).
+4. Add `VEX_EVENTS_TOKEN`, set it as a secret, and use the **production** context. This project is on Netlify's Free plan, so leave the scope at its default **All scopes**; per-scope selection is not available on this plan.
 5. Trigger a new production deploy so the function receives the secret.
 6. Open the dashboard and press refresh. The connection indicator should change to **VEX feed live**.
 
-Do not paste the token into this repository or share it with anyone. If the VEX API token is unavailable, the dashboard will clearly say that the live feed is not connected rather than inventing results.
+### Optional GitHub Actions setup
+
+The repository also includes **Sync VEX Events token to Netlify** under GitHub Actions. To use that workflow, add these two repository Actions secrets:
+
+- `VEX_EVENTS_TOKEN` — the VEX Events personal access token.
+- `NETLIFY_AUTH_TOKEN` — a Netlify personal access token.
+
+Then run the workflow manually from the Actions tab. It stores the VEX token as a secret in the Netlify production context (using the Free-plan-compatible default scope), runs the project checks, and triggers a production deploy.
+
+Do not paste tokens into this repository or expose them in browser code. If the VEX API token is unavailable, the dashboard will clearly say that the live feed is not connected rather than inventing results.
 
 ## Scouting intelligence
 
