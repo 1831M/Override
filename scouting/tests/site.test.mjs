@@ -164,3 +164,14 @@ test("season snapshot margins reconcile to displayed averages", async () => {
     assert.ok(Math.abs((row.forAvg-row.againstAvg)-row.margin)<0.11, row.team+" margin mismatch");
   }
 });
+
+test("1831M event score is explicitly attributed to its alliance, not its robot", () => {
+  assert.match(dataSource,/alliance that recorded 140 points/);
+  assert.match(dataSource,/not an individual robot score/);
+});
+test("archived profile rows expose rank, skills breakdown and event source links", () => {
+  assert.match(app,/Skills \+e\.skills/);
+  assert.match(app,/source\.url/);
+  assert.match(html,/Autonomous Win Point \(separate from the 12-point bonus\)/);
+  assert.match(html,/At least 7 alliance Pins Placed/);
+});
