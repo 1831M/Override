@@ -237,3 +237,11 @@ test("historical charts have metric and ordering controls plus an interactive sc
   assert.match(app,/openChartTeam/);
   assert.match(css,/\.scatter-point:hover circle/);
 });
+
+test("source health panel exposes per-feed availability and exact API error details", () => {
+  assert.match(app,/source-health-grid/);
+  assert.match(app,/snapshot\.sourceAvailability/);
+  assert.match(app,/snapshot\.sourceErrors/);
+  assert.match(app,/error\.source/);
+  assert.match(css,/\.source-health-grid \.source-fail/);
+});
