@@ -558,7 +558,7 @@
       return comparisonCard(number,team,stat,base,notes);
     };
     if(!a.value||!b.value){output.innerHTML='<div class="empty-state">The comparison needs two registered teams.</div>';return;}
-    output.innerHTML='<div class="compare-vs">TEAM A</div>'+make(a.value)+'<div class="compare-vs">TEAM B</div>'+make(b.value);
+    output.innerHTML=make(a.value)+make(b.value);
     if(a.value===b.value) output.insertAdjacentHTML("beforeend",'<p class="fine-print">Both selectors currently show the same team.</p>');
   }
 
