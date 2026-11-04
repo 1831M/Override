@@ -21,6 +21,15 @@ test("browser application parses as valid JavaScript", () => {
   assert.doesNotThrow(() => new Function(app));
 });
 
+test("match search and CSV export controls are wired", () => {
+  assert.match(html, /id="match-search"/);
+  assert.match(html, /id="export-matches"/);
+  assert.match(html, /id="export-rankings"/);
+  assert.match(app, /function exportMatchesCsv/);
+  assert.match(app, /function exportRankingsCsv/);
+  assert.match(app, /match-search/);
+});
+
 test("all dashboard views and navigation targets exist", () => {
   for (const view of ["overview","intelligence","matches","rankings","teams","skills","sources"]) {
     assert.ok(html.includes('id="' + view + '"') || html.includes("id='" + view + "'"));
