@@ -258,6 +258,8 @@
     let matches = (state.snapshot?.matches || []).filter(match => !division || match.division === division);
     if (state.matchFilter === "upcoming") matches = matches.filter(match => !match.scored);
     if (state.matchFilter === "scored") matches = matches.filter(match => match.scored);
+    const query=$("#match-search").value.trim().toLowerCase();
+    if(query) matches=matches.filter(match=>[match.name,match.roundLabel,match.division,match.field,...(match.redTeams||[]),...(match.blueTeams||[])].join(" ").toLowerCase().includes(query));
     const rows = matches.map(match =>
       '<tr><td><b class="table-match-name">' + esc(match.name) + '</b><small>' + esc(match.roundLabel) + '</small></td><td>' + esc(match.division) + '<small>' + (match.field ? "Field " + esc(match.field) : "Field not listed") + '</small></td><td class="alliance-cell red-cell">' + allianceNames(match.redTeams) + '</td><td class="table-score">' + scorePill(match) + '</td><td class="alliance-cell blue-cell">' + allianceNames(match.blueTeams) + '</td><td>' + (match.scored ? '<span class="status-tag scored">Scored</span>' : '<span class="status-tag pending">Pending</span>') + '</td></tr>'
     ).join("");
@@ -499,6 +501,30 @@
   }
 
 
+
+  function downloadCsv(filename, rows) {
+    const csv=rows.map(row=>row.map(value=>{const text=String(value??"");return '"'+text.replace(/"/g,'""')+'"';}).join(",")).join("\r\n");
+    const blob=new Blob(["\\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob),link=document.createElement("a");
+    link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+  }
+  function exportMatchesCsv() {
+    const division=$("#division-filter").value,query=$("#match-search").value.trim().toLowerCase();
+    let matches=(state.snapshot?.matches||[]).filter(m=>!division||m.division===division);
+    if(state.matchFilter==="upcoming")matches=matches.filter(m=>!m.scored);
+    if(state.matchFilter==="scored")matches=matches.filter(m=>m.scored);
+    if(query)matches=matches.filter(m=>[m.name,m.roundLabel,m.division,m.field,...(m.redTeams||[]),...(m.blueTeams||[])].join(" ").toLowerCase().includes(query));
+    const rows=[["Match","Round","Division","Field","Scheduled","Red teams","Red score","Blue teams","Blue score","Status"],...matches.map(m=>[m.name,m.roundLabel,m.division,m.field,m.scheduled,(m.redTeams||[]).join(" + "),m.scored?m.redScore:"",(m.blueTeams||[]).join(" + "),m.scored?m.blueScore:"",m.scored?"Scored":"Not scored"])];
+    downloadCsv("1831M-override-matches.csv",rows);
+    showAlert(matches.length+" match row(s) exported using the current filters.","info");
+  }
+  function exportRankingsCsv() {
+    const division=$("#ranking-division").value,query=$("#ranking-search").value.trim().toLowerCase();
+    const rows=(state.snapshot?.rankings||[]).filter(r=>(!division||r.division===division)&&(!query||String(r.team).toLowerCase().includes(query)));
+    downloadCsv("1831M-override-rankings.csv",[["Rank","Team","Division","Wins","Losses","Ties","WP","AP","SP","Average points","High score"],...rows.map(r=>[r.rank,r.team,r.division,r.wins,r.losses,r.ties,r.wp,r.ap,r.sp,r.averagePoints,r.highScore])]);
+    showAlert(rows.length+" ranking row(s) exported using the current filters.","info");
+  }
+
   function comparisonCard(number, team, stat, baseline, notes) {
     if (!team && !baseline) return '<div class="compare-card"><div class="empty-state">No team data available.</div></div>';
     const title = number || "Unknown team";
@@ -593,6 +619,9 @@
       renderMatches();
     });
     $("#division-filter").addEventListener("change",renderMatches);
+    $("#match-search").addEventListener("input",renderMatches);
+    $("#export-matches").addEventListener("click",exportMatchesCsv);
+    $("#export-rankings").addEventListener("click",exportRankingsCsv);
     $("#ranking-division").addEventListener("change",renderRankings);
     $("#ranking-search").addEventListener("input",renderRankings);
     $("#season-search").addEventListener("input",renderSeasonSnapshot);
