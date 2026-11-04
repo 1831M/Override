@@ -452,6 +452,66 @@
   function saveObservations(rows) {
     try { localStorage.setItem(OBSERVATION_KEY, JSON.stringify(rows)); return true; } catch { return false; }
   }
+  function buildWatchlistScheduleRows() {
+    const pinned = readPinnedTeams();
+    const baseline = legacy?.seasonSnapshot?.metrics || [];
+    const priorityTeams = pinned.length ? pinned : baseline
+      .filter(row => ["S","A"].includes(row.tier))
+      .sort((a,b) => ({S:0,A:1}[a.tier]-{S:0,A:1}[b.tier]) || Number(b.ccwm||0)-Number(a.ccwm||0))
+      .slice(0,10).map(row => String(row.team));
+    const watched = new Set(priorityTeams.map(String));
+    const matches = (state.snapshot?.matches || []).filter(match => !match.scored);
+    return matches.map((match,index) => {
+      const red = (match.redTeams || []).map(String);
+      const blue = (match.blueTeams || []).map(String);
+      const redWatched = red.filter(team => watched.has(team));
+      const blueWatched = blue.filter(team => watched.has(team));
+      if (!redWatched.length && !blueWatched.length) return null;
+      return {
+        match:match.name || "Match",
+        division:match.division || "Division not listed",
+        field:match.field || "",
+        scheduled:match.scheduled || "",
+        red,
+        blue,
+        watched:[...redWatched,...blueWatched],
+        focus:redWatched.length && blueWatched.length ? "Both alliances" : redWatched.length ? "Red alliance" : "Blue alliance",
+        source:pinned.length ? "Manually pinned" : "S/A baseline priority",
+        _index:index
+      };
+    }).filter(Boolean).sort((a,b) => {
+      const at=a.scheduled?Date.parse(a.scheduled):Infinity;
+      const bt=b.scheduled?Date.parse(b.scheduled):Infinity;
+      return at-bt || a._index-b._index;
+    });
+  }
+
+  function renderWatchlistSchedule() {
+    const target=$("#watchlist-schedule");
+    if(!target) return;
+    const pinned=readPinnedTeams();
+    const rows=buildWatchlistScheduleRows();
+    const heading=pinned.length
+      ? pinned.length+" manually pinned team(s)"
+      : "Top historical S/A priorities (pin teams to customise)";
+    $("#watchlist-schedule-caption").textContent=heading+" · "+rows.length+" upcoming fixture(s)";
+    target.innerHTML=rows.length
+      ? '<div class="table-scroll"><table class="watch-schedule-table"><thead><tr><th>Match</th><th>Division / field</th><th>Teams to watch</th><th>Red alliance</th><th>Blue alliance</th><th>Scheduled</th></tr></thead><tbody>'+rows.map(row=>
+        '<tr><td><b>'+esc(row.match)+'</b><small>'+esc(row.focus)+'</small></td><td>'+esc(row.division)+(row.field?' · Field '+esc(row.field):'')+'</td><td><b>'+esc(row.watched.join(", "))+'</b><small>'+esc(row.source)+'</small></td><td class="red-cell">'+esc(row.red.join(" · ")||"—")+'</td><td class="blue-cell">'+esc(row.blue.join(" · ")||"—")+'</td><td>'+esc(row.scheduled?dateTime(row.scheduled):"Time TBC")+'</td></tr>'
+      ).join("")+'</tbody></table></div>'
+      : '<div class="empty-state">'+(state.snapshot?.matches?.length
+        ? "No unscored fixtures currently include the selected watchlist teams. The official schedule may still be incomplete."
+        : "The official match schedule has not been published yet.")+'</div>';
+  }
+
+  function exportWatchlistSchedule() {
+    const rows=buildWatchlistScheduleRows();
+    const output=[["Match","Division","Field","Scheduled","Watched teams","Focus alliance","Red alliance","Blue alliance","Priority source"]];
+    rows.forEach(row=>output.push([row.match,row.division,row.field,row.scheduled,row.watched.join("; "),row.focus,row.red.join("; "),row.blue.join("; "),row.source]));
+    downloadCsv("1831M-watchlist-fixture-plan.csv",output);
+    showAlert(rows.length+" watchlist fixture(s) exported.","info");
+  }
+
   function renderIntelligence() {
     const baseline = legacy?.seasonSnapshot?.metrics || [];
     const stats = state.snapshot?.stats || [];
@@ -525,6 +585,7 @@
     }
     const list=$("#observation-list");
     if(list) list.innerHTML=observations.length ? observations.map((o,index)=>({...o,_index:index})).reverse().slice(0,30).map(o=>'<div class="observation-row"><div class="observation-row-main"><b>'+esc(o.team)+' · '+esc(o.category)+' · '+esc(o.rating)+'</b><small>'+esc(new Date(o.createdAt).toLocaleString("en-AU"))+(o.scout?' · Scout '+esc(o.scout):"")+'</small><p>'+esc(o.notes)+'</p></div><button class="note-delete" type="button" data-delete-observation="'+o._index+'" aria-label="Delete observation">×</button></div>').join("") : '<div class="empty-state">No human scouting observations recorded yet.</div>';
+    renderWatchlistSchedule();
     renderTeamComparison();
     renderScoutSheet();
   }
@@ -692,6 +753,7 @@
       savePinnedTeams(readPinnedTeams().filter(team=>team!==number));
       renderIntelligence();showAlert(number+" removed from the manual watchlist.","info");
     });
+    $("#export-watchlist-schedule").addEventListener("click",exportWatchlistSchedule);
     $("#export-watchlist").addEventListener("click",()=>{
       const pinned=readPinnedTeams(),rows=[["Team","Organisation","Historical tier","Confidence","Live scored matches"]];
       for(const number of pinned){
