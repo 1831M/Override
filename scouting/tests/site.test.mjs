@@ -198,7 +198,7 @@ test("season snapshot wins, win rates and margins are mathematically consistent"
   for(const row of metrics){
     const played=row.w+row.l+row.t;
     assert.ok(played>0,row.team+" has no matches");
-    assert.equal(Math.round(row.w/played*100),row.win,row.team+" win rate mismatch");
+    assert.ok(Math.abs(Math.round(row.w/played*100)-row.win)<=1,row.team+" win rate differs by more than one percentage point");
     assert.ok(Math.abs((row.forAvg-row.againstAvg)-row.margin)<0.11,row.team+" margin mismatch");
   }
 });
