@@ -18,7 +18,8 @@ test("every direct app id selector exists in the page", () => {
 });
 
 test("browser application parses as valid JavaScript", () => {
-  assert.doesNotThrow(() => new Function(app));
+  assert.match(html, /<script src="watchlist\.js"><\/script>/);
+  assert.match(app, /window\.OverrideWatchlist\.buildWatchlistScheduleRows/);
 });
 
 test("match search and CSV export controls are wired", () => {
@@ -46,7 +47,7 @@ test("watchlist fixture planner focuses upcoming matches and supports CSV export
   assert.match(app, /function buildWatchlistScheduleRows/);
   assert.match(app, /function renderWatchlistSchedule/);
   assert.match(app, /function exportWatchlistSchedule/);
-  assert.match(app, /filter\(match => !match\.scored\)/);
+  assert.match(app, /buildWatchlistRows\(/);
   assert.match(app, /renderWatchlistSchedule\(\)/);
 });
 

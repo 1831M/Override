@@ -1,6 +1,8 @@
 (() => {
   "use strict";
 
+  const buildWatchlistRows = window.OverrideWatchlist.buildWatchlistScheduleRows;
+
   const $ = selector => document.querySelector(selector);
   const state = {
     snapshot:null, previous:null, live:false, stale:false,
@@ -453,37 +455,11 @@
     try { localStorage.setItem(OBSERVATION_KEY, JSON.stringify(rows)); return true; } catch { return false; }
   }
   function buildWatchlistScheduleRows() {
-    const pinned = readPinnedTeams();
-    const baseline = legacy?.seasonSnapshot?.metrics || [];
-    const priorityTeams = pinned.length ? pinned : baseline
-      .filter(row => ["S","A"].includes(row.tier))
-      .sort((a,b) => ({S:0,A:1}[a.tier]-{S:0,A:1}[b.tier]) || Number(b.ccwm||0)-Number(a.ccwm||0))
-      .slice(0,10).map(row => String(row.team));
-    const watched = new Set(priorityTeams.map(String));
-    const matches = (state.snapshot?.matches || []).filter(match => !match.scored);
-    return matches.map((match,index) => {
-      const red = (match.redTeams || []).map(String);
-      const blue = (match.blueTeams || []).map(String);
-      const redWatched = red.filter(team => watched.has(team));
-      const blueWatched = blue.filter(team => watched.has(team));
-      if (!redWatched.length && !blueWatched.length) return null;
-      return {
-        match:match.name || "Match",
-        division:match.division || "Division not listed",
-        field:match.field || "",
-        scheduled:match.scheduled || "",
-        red,
-        blue,
-        watched:[...redWatched,...blueWatched],
-        focus:redWatched.length && blueWatched.length ? "Both alliances" : redWatched.length ? "Red alliance" : "Blue alliance",
-        source:pinned.length ? "Manually pinned" : "S/A baseline priority",
-        _index:index
-      };
-    }).filter(Boolean).sort((a,b) => {
-      const at=a.scheduled?Date.parse(a.scheduled):Infinity;
-      const bt=b.scheduled?Date.parse(b.scheduled):Infinity;
-      return at-bt || a._index-b._index;
-    });
+    return buildWatchlistRows(
+      state.snapshot?.matches || [],
+      readPinnedTeams(),
+      legacy?.seasonSnapshot?.metrics || []
+    );
   }
 
   function renderWatchlistSchedule() {
