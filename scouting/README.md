@@ -36,12 +36,15 @@ The Scout intelligence view connects the three evidence layers:
 - **Live competition:** current event rankings, scored matches and alliance score trends. The analysis flags meaningful gaps against baseline and compares the latest three scored alliance outcomes with the preceding three when there is enough evidence.
 - **Human scouting:** scouts can record team-specific observations for robot capability, autonomous, reliability, mechanisms, driver behaviour, strategy and alliance compatibility.
 
-Signals are prompts for scouts, not verdicts. Alliance scores are shared by two robots and cannot establish individual contribution. Human observations currently save in the browser that recorded them; they are not synchronised between scouts or devices.
+Signals are prompts for scouts, not verdicts. Alliance scores are shared by two robots and cannot establish individual contribution. Human observations currently save in the browser that recorded them; use the JSON export/import controls to transfer a notebook between scouts or devices. The Scout intelligence view also includes a two-team evidence comparison and a printable match field sheet.
 
 ## Live refresh behaviour
 
 - Browser polling runs every 60 seconds while the page is visible.
 - Manual refresh is available from the top-right refresh control.
+- Match centre supports searching by match, field, division or team and exporting the current filtered schedule/results to CSV.
+- Rankings can be exported to CSV using the current filters.
+- Printable match scouting sheets are generated from the official published schedule.
 - The function keeps a short in-memory snapshot cache to avoid duplicate API requests.
 - Team season history is refreshed at most once per 10 minutes per warm function instance.
 - The browser stores the last successful official snapshot locally. If the API is temporarily unavailable, that snapshot is shown with its original update time and a stale-data label.
@@ -74,7 +77,7 @@ npm run check
 npm run build
 ```
 
-Unit and mocked integration tests cover match scoring vs unscored fixtures, alliance-level metrics, best-run skills aggregation, event and division API aggregation, partial source failures, season-history gaps, unknown event handling, and history caching. UI smoke checks verify all direct interface selectors, navigation targets, source-unavailable states, responsive styling, reduced-motion support, the server-only token boundary, and the refresh interval. See [DESK-CHECK.md](DESK-CHECK.md) for the pseudocode walkthrough and full manual test matrix.
+GitHub Actions also runs a production smoke test against the deployed VEX feed after local checks and the build. Unit and mocked integration tests cover match scoring vs unscored fixtures, alliance-level metrics, best-run skills aggregation, event and division API aggregation, partial source failures, season-history gaps, unknown event handling, and history caching. UI smoke checks verify all direct interface selectors, navigation targets, source-unavailable states, responsive styling, reduced-motion support, the server-only token boundary, and the refresh interval. See [DESK-CHECK.md](DESK-CHECK.md) for the pseudocode walkthrough and full manual test matrix.
 
 ## Deployment
 
