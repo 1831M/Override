@@ -28,6 +28,10 @@ test("match search and CSV export controls are wired", () => {
   assert.match(app, /function exportMatchesCsv/);
   assert.match(app, /function exportRankingsCsv/);
   assert.match(app, /output.innerHTML=make\(a.value\)\+make\(b.value\)/);
+  assert.match(html, /id="scout-sheet-preview"/);
+  assert.match(app, /function renderScoutSheet/);
+  assert.match(app, /window\.print\(\)/);
+  assert.match(css, /@media print/);
   assert.match(app, /match-search/);
 });
 
