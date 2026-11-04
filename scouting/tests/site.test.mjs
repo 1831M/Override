@@ -134,3 +134,33 @@ test("historical dossier includes 1831M baseline and matchup decision support", 
   assert.match(html,/1940H Carbon/);
   assert.match(html,/Alliance selection logic/);
 });
+
+test("dossier states cross-event rating limits and flags a source conflict", () => {
+  assert.match(dataSource,/cross-event CCWM\/OPR\/DPR averages are not strictly comparable/i);
+  assert.match(html,/Cross-event power ratings are indicative/);
+  assert.match(html,/RECONCILIATION REQUIRED/);
+});
+test("1831M archived Knox skills result includes driver and programming scores", async () => {
+  const vm = await import("node:vm");
+  const context = {window:{}};
+  vm.runInNewContext(dataSource, context);
+  const row = context.window.SCOUTING_DATA.teams.find(team=>team.id==="1831M").events[0];
+  assert.equal(row.skills,86);
+  assert.equal(row.driver,78);
+  assert.equal(row.auton,8);
+});
+test("dossier profiles support expandable fieldwork actions and official rules", () => {
+  assert.match(app,/data-profile-compare/);
+  assert.match(app,/data-profile-pin/);
+  assert.match(app,/data-profile-observe/);
+  assert.match(html,/GAME RULES QUICK REFERENCE/);
+  assert.match(html,/6 each/);
+});
+test("season snapshot margins reconcile to displayed averages", async () => {
+  const vm = await import("node:vm");
+  const context = {window:{}};
+  vm.runInNewContext(dataSource, context);
+  for (const row of context.window.SCOUTING_DATA.seasonSnapshot.metrics) {
+    assert.ok(Math.abs((row.forAvg-row.againstAvg)-row.margin)<0.11, row.team+" margin mismatch");
+  }
+});
