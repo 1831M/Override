@@ -48,6 +48,11 @@ jobs:
           if (snapshot.sourceAvailability?.teams !== true) failures.push("Registered team source is unavailable");
           if (!Array.isArray(snapshot.awards)) failures.push("Awards collection is not an array");
           if (snapshot.sourceAvailability?.awards !== true) failures.push("Awards source is unavailable");
+          if (!Array.isArray(snapshot.skills)) failures.push("Skills collection is not an array");
+          if (snapshot.sourceAvailability?.skills !== true) failures.push("Skills source is unavailable");
+          if (!Array.isArray(snapshot.stats) || snapshot.stats.length !== snapshot.teams?.length) failures.push("Team analytics do not match the registered roster");
+          const teamNumbers = (snapshot.teams || []).map(team => String(team.number));
+          if (new Set(teamNumbers).size !== teamNumbers.length) failures.push("Registered roster contains duplicate team numbers");
           const divisions = snapshot.event?.divisions || [];
           if (!divisions.length) failures.push("Event has no published divisions");
           for (const division of divisions) {
