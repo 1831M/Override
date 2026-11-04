@@ -20,14 +20,14 @@ test("pinned teams override baseline and only matching unscored fixtures are pla
 
 test("baseline priorities are ranked S before A and then by CCWM", () => {
   const baseline = [
-    {team:"A1",tier:"A",ccwm:90},
-    {team:"S1",tier:"S",ccwm:10},
-    {team:"S2",tier:"S",ccwm:20}
+    {team:"1940H",tier:"A",ccwm:90},
+    {team:"1831M",tier:"S",ccwm:10},
+    {team:"4613G",tier:"S",ccwm:20}
   ];
   const rows = buildWatchlistScheduleRows(matches, [], baseline);
   assert.equal(rows.length, 2);
   assert.equal(rows[0].source, "S/A baseline priority");
-  assert.ok(rows.every(row => row.watched.some(team => ["A1","S1","S2"].includes(team))));
+  assert.ok(rows.every(row => row.watched.some(team => ["1940H","1831M","4613G"].includes(team))));
 });
 
 test("unknown score state is excluded rather than assumed to be an upcoming match", () => {
