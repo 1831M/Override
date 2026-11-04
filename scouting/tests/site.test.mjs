@@ -40,6 +40,16 @@ test("match search and CSV export controls are wired", () => {
   assert.match(app, /match-search/);
 });
 
+test("watchlist fixture planner focuses upcoming matches and supports CSV export", () => {
+  assert.match(html, /id="watchlist-schedule"/);
+  assert.match(html, /id="export-watchlist-schedule"/);
+  assert.match(app, /function buildWatchlistScheduleRows/);
+  assert.match(app, /function renderWatchlistSchedule/);
+  assert.match(app, /function exportWatchlistSchedule/);
+  assert.match(app, /filter\(match => !match\.scored\)/);
+  assert.match(app, /renderWatchlistSchedule\(\)/);
+});
+
 test("all dashboard views and navigation targets exist", () => {
   for (const view of ["overview","intelligence","matches","rankings","teams","skills","sources"]) {
     assert.ok(html.includes('id="' + view + '"') || html.includes("id='" + view + "'"));
