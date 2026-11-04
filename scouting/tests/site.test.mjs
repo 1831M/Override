@@ -22,7 +22,7 @@ test("browser application parses as valid JavaScript", () => {
 });
 
 test("all six dashboard views and navigation targets exist", () => {
-  for (const view of ["overview","matches","rankings","teams","skills","sources"]) {
+  for (const view of ["overview","intelligence","matches","rankings","teams","skills","sources"]) {
     assert.ok(html.includes('id="' + view + '"') || html.includes("id='" + view + "'"));
     assert.ok(html.includes('data-view="' + view + '"') || html.includes("data-view='" + view + "'"));
   }
@@ -43,4 +43,14 @@ test("live endpoint uses the VEX Events package and keeps token server-side", ()
   assert.match(app, /divisionFeedComplete/);
   assert.match(app, /sourceAvailability?\.skills === false/);
   assert.match(app, /team roster could not be loaded/);
+});
+
+test("scouting intelligence compares baseline with live match evidence", () => {
+  assert.match(app, /Below historical scoring baseline/);
+  assert.match(app, /Above historical scoring baseline/);
+  assert.match(app, /Recent scoring trend rising/);
+  assert.match(app, /Recent scoring trend falling/);
+  assert.match(app, /OBSERVATION_KEY/);
+  assert.match(html, /id="observation-form"/);
+  assert.match(html, /id="intel-signals"/);
 });
