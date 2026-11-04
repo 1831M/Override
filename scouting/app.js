@@ -338,10 +338,13 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
       const matches=m ? m.w+m.l+m.t : null;
       const record=m ? [m.w,m.l,m.t].join("–") : "—";
       const confidence=m?.confidence || "Unrated";
-      return '<article class="dossier-profile"><div class="dossier-profile-head"><div><span class="team-code">'+esc(team.id)+'</span><b>'+esc(p.displayName)+'</b><small>'+esc(team.school)+'</small></div><span class="tier-tag tier-'+esc(p.tier.toLowerCase())+'">'+esc(p.tier)+' PRIORITY</span></div>'+
-        '<div class="dossier-profile-metrics">'+metric("RECORD",record)+metric("MATCHES",num(matches))+metric("WIN RATE",m?num(m.win)+"%":"—")+metric("AVG MARGIN",m?signed(m.margin):"—")+metric("CCWM",m?signed(m.ccwm):"—")+metric("CONFIDENCE",esc(confidence))+metric("OPR",p.opr==null?"—":num(p.opr))+metric("DPR",p.dpr==null?"—":num(p.dpr))+'</div>'+
-        '<div class="dossier-profile-copy"><b>Statistical assessment</b><p>'+esc(p.read)+'</p><b>What to scout</b><p>'+esc(p.scoutFocus)+'</p></div>'+
-        '<a class="source-link" href="'+esc(p.profileUrl)+'" target="_blank" rel="noopener">Open VEX Tracker team profile ↗</a></article>';
+      const pinned=readPinnedTeams().includes(team.id);
+      const eventRows=(team.events||[]).map(e=>{const source=(legacy?.sources||[]).find(s=>s.id===e.event);return source?'<div class="profile-event-row"><b>'+esc(source.date)+'</b><span>'+esc(source.name)+'</span><strong>'+esc(e.record||"—")+'</strong></div>':"";}).join("");
+      return '<details class="dossier-profile"><summary class="dossier-profile-summary"><div class="dossier-profile-head"><div><span class="team-code">'+esc(team.id)+'</span><b>'+esc(p.displayName)+'</b><small>'+esc(team.school)+'</small></div><span class="tier-tag tier-'+esc(p.tier.toLowerCase())+'">'+esc(p.tier)+' PRIORITY</span></div>'+
+        '<div class="dossier-profile-metrics">'+metric("RECORD",record)+metric("MATCHES",num(matches))+metric("WIN RATE",m?num(m.win)+"%":"—")+metric("AVG MARGIN",m?signed(m.margin):"—")+metric("CCWM",m?signed(m.ccwm):"—")+metric("CONFIDENCE",esc(confidence))+metric("OPR",p.opr==null?"—":num(p.opr))+metric("DPR",p.dpr==null?"—":num(p.dpr))+'</div><span class="profile-expand-hint">Open full scouting report <span aria-hidden="true">＋</span></span></summary>'+
+        '<div class="dossier-profile-expanded"><div class="dossier-profile-copy"><b>Statistical assessment</b><p>'+esc(p.read)+'</p><b>What to scout</b><p>'+esc(p.scoutFocus)+'</p></div>'+
+        (eventRows?'<div class="profile-event-list"><b>Archived event appearances in this dossier</b>'+eventRows+'</div>':'<p class="fine-print">No archived event row is attached to this profile.</p>')+
+        '<div class="profile-actions"><button type="button" class="secondary-button" data-profile-compare="'+esc(team.id)+'">Compare team</button><button type="button" class="secondary-button" data-profile-pin="'+esc(team.id)+'">'+(pinned?"Pinned to watchlist":"Add to watchlist")+'</button><button type="button" class="secondary-button" data-profile-observe="'+esc(team.id)+'">Record observation</button><a class="source-link" href="'+esc(p.profileUrl)+'" target="_blank" rel="noopener">Open VEX Tracker profile ↗</a></div></div></details>';
     }).join("") || '<div class="empty-state">No team profiles match these filters.</div>';
     const count=$("#historical-profile-count");
     if(count) count.textContent=profiles.length+" of "+teams.filter(t=>t.dossier).length+" team profiles";
@@ -371,9 +374,9 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     if (body) body.innerHTML = filtered.map(row => {
       const event = row.event, qual = event.qualAlliance || {};
       return '<tr><td><b>' + esc(row.source.name) + '</b><small>' + esc(row.source.date) + '</small></td><td><b class="table-team">' + esc(row.team.id) + '</b><small>' + esc(row.team.school) + '</small></td><td>' + cell(event.rank) + '</td><td>' + cell(event.record) + '</td><td>' + cell(event.wp) + '</td><td>' + cell(event.ap) + '</td><td>' + cell(event.sp) + '</td><td>' + cell(event.skills) + '</td><td>' + cell(event.driver) + '</td><td>' + cell(event.auton) + '</td><td>' + cell(qual.forAvg == null ? null : Number(qual.forAvg).toFixed(1)) + '</td><td>' + cell(qual.againstAvg == null ? null : Number(qual.againstAvg).toFixed(1)) + '</td></tr>';
-    }).join("") || '<tr><td colspan="12" class="table-empty">No verified archived event records match this filter.</td></tr>';
+    }).join("") || '<tr><td colspan="12" class="table-empty">No archived source rows match this filter.</td></tr>';
     const count = $("#historical-event-count");
-    if (count) count.textContent = filtered.length + " verified team-event records";
+    if (count) count.textContent = filtered.length + " archived team-event rows · source-referenced, not independently re-audited";
     const links = $("#historical-source-links");
     if (links) links.innerHTML = (legacy?.sources || []).map(source =>
       '<a href="' + esc(source.url) + '" target="_blank" rel="noopener"><b>' + esc(source.name) + '</b><small>' + esc(source.date) + ' · open archived results ↗</small></a>'
@@ -787,6 +790,28 @@ import { buildWatchlistScheduleRows, summarizeWatchlistCoverage, getWatchlistSch
     $("#season-sort").addEventListener("change",renderSeasonSnapshot);
     $("#historical-profile-search").addEventListener("input",renderHistoricalProfiles);
     $("#historical-profile-tier").addEventListener("change",renderHistoricalProfiles);
+    $("#historical-profiles").addEventListener("click",event=>{
+      const pin=event.target.closest("[data-profile-pin]");
+      const compare=event.target.closest("[data-profile-compare]");
+      const observe=event.target.closest("[data-profile-observe]");
+      if(pin){
+        const id=pin.dataset.profilePin,current=readPinnedTeams();
+        if(!current.includes(id))savePinnedTeams([...current,id]);
+        renderHistoricalProfiles();renderIntelligence();
+        showAlert(id+" added to your local scouting watchlist.","info");
+      }else if(compare){
+        const id=compare.dataset.profileCompare;
+        document.querySelector('.nav-tab[data-view="intelligence"]').click();
+        renderIntelligence();
+        const a=$("#compare-team-a"),b=$("#compare-team-b");
+        if(a.value===id)b.value=id;else if(!a.value||a.value===b.value)a.value=id;else b.value=id;
+        renderTeamComparison();
+      }else if(observe){
+        const id=observe.dataset.profileObserve;
+        document.querySelector('.nav-tab[data-view="intelligence"]').click();
+        renderIntelligence();$("#observation-team").value=id;$("#observation-notes").focus();
+      }
+    });
     $("#historical-event-search").addEventListener("input",renderHistoricalEvents);
     $("#historical-event-filter").addEventListener("change",renderHistoricalEvents);
     $("#team-search").addEventListener("input",renderTeams);
