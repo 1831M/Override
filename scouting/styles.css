@@ -465,3 +465,22 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
 .notable-match-row small{font-size:8px;color:#839087;line-height:1.5}
 .notable-match-row>strong{flex:0 0 auto;text-align:right;font:700 15px "Space Grotesk";color:#385c44}
 .notable-match-row>strong small{display:block;margin-top:2px;font:700 8px "Space Grotesk";text-transform:uppercase}
+
+.season-charts-interactive{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:stretch}
+.chart-controls{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.chart-controls label{display:grid;gap:5px;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#829087}
+.chart-controls select{min-width:130px;border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:#fff;color:#385544;font:600 10px inherit}
+.season-bar-row{width:100%;border:0;background:transparent;padding:3px 0;text-align:left;cursor:pointer}
+.season-bar-row:hover b,.season-bar-row:focus-visible b{color:#16804b;text-decoration:underline}
+.season-bar-row:focus-visible,.scatter-point:focus-visible{outline:2px solid #528d67;outline-offset:3px;border-radius:5px}
+.season-scatter{width:100%;overflow:hidden}
+.season-scatter svg{display:block;width:100%;height:auto;overflow:visible}
+.scatter-grid{stroke:#e8eee8;stroke-width:1}
+.scatter-axis{stroke:#9ba99e;stroke-width:1.2}
+.scatter-tick{font:9px sans-serif;fill:#8a978d}
+.scatter-label{font:10px sans-serif;fill:#66766b}
+.scatter-point{cursor:pointer}
+.scatter-point circle{fill:#73a886;stroke:#fff;stroke-width:1.5;transition:r .15s,fill .15s}
+.scatter-point:hover circle,.scatter-point:focus circle{r:8;fill:#315e42}
+.scatter-point text{font:8px sans-serif;fill:#4d6253;pointer-events:none}
+@media(max-width:900px){.season-charts-interactive{grid-template-columns:1fr}}
