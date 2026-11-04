@@ -434,6 +434,17 @@
   }
 
 
+  const WATCHLIST_KEY = "1831m-override-watchlist-v1";
+  function readPinnedTeams() {
+    try {
+      const value=JSON.parse(localStorage.getItem(WATCHLIST_KEY)||"[]");
+      return Array.isArray(value)?[...new Set(value.map(String))].slice(0,24):[];
+    } catch { return []; }
+  }
+  function savePinnedTeams(teams) {
+    try { localStorage.setItem(WATCHLIST_KEY,JSON.stringify([...new Set(teams.map(String))].slice(0,24)));return true; }
+    catch { return false; }
+  }
   const OBSERVATION_KEY = "1831m-override-observations-v1";
   function readObservations() {
     try { return JSON.parse(localStorage.getItem(OBSERVATION_KEY) || "[]"); } catch { return []; }
@@ -489,6 +500,22 @@
       const humanText=teamNotes.length?" · Latest scout note: "+teamNotes[teamNotes.length-1].category+" ("+teamNotes[teamNotes.length-1].rating+")":" · No human observations yet";
       return '<div class="watch-row"><div><b>'+esc(row.team)+'</b><small>Tier '+esc(row.tier)+' · '+esc(row.confidence)+' confidence · '+esc(reason)+esc(liveText)+esc(humanText)+'</small></div><span>'+obs+' scout note'+(obs===1?"":"s")+'</span></div>';
     }).join("") || '<div class="empty-state">No baseline teams loaded.</div>';
+    const watchSelect=$("#watchlist-team");
+    if(watchSelect) {
+      const current=watchSelect.value;
+      const roster=state.snapshot?.teams || baseline.map(row=>({number:row.team,organization:"Historical baseline"}));
+      watchSelect.innerHTML='<option value="">Choose a team</option>'+roster.map(team=>'<option value="'+esc(team.number)+'">'+esc(team.number)+' · '+esc(team.organization||"")+'</option>').join("");
+      watchSelect.value=current;
+    }
+    const pinned=readPinnedTeams();
+    const pinnedBox=$("#watchlist-pinned");
+    if(pinnedBox) pinnedBox.innerHTML=pinned.length?pinned.map(number=>{
+      const team=teamLookup().get(number);
+      const live=byNumber.get(number);
+      const base=baseline.find(row=>String(row.team)===number);
+      const detail=[team?.organization,base?"Tier "+base.tier+" baseline":null,live?.scoredMatches?live.scoredMatches+" live matches":null].filter(Boolean).join(" · ")||"Manually pinned for field observation";
+      return '<div class="watch-row pinned-watch"><div><b>'+esc(number)+'</b><small>'+esc(detail)+'</small></div><button class="watch-remove" type="button" data-watch-remove="'+esc(number)+'" aria-label="Remove '+esc(number)+' from watchlist">Remove</button></div>';
+    }).join(""):'<div class="empty-state">No manually pinned teams yet. Pin teams you want scouts to prioritise.</div>';
     const select=$("#observation-team");
     if(select) {
       const current=select.value;
@@ -650,6 +677,31 @@
     $("#observation-team").addEventListener("focus",renderIntelligence);
     $("#compare-team-a").addEventListener("change",renderTeamComparison);
     $("#compare-team-b").addEventListener("change",renderTeamComparison);
+    $("#add-watchlist-team").addEventListener("click",()=>{
+      const number=$("#watchlist-team").value;
+      if(!number)return;
+      const pinned=readPinnedTeams();
+      if(pinned.includes(number)){showAlert(number+" is already pinned.","info");return;}
+      if(!savePinnedTeams([...pinned,number])){showAlert("Could not save the watchlist in this browser.","warning");return;}
+      renderIntelligence();showAlert(number+" added to the manual watchlist.","info");
+    });
+    $("#watchlist-pinned").addEventListener("click",event=>{
+      const button=event.target.closest("[data-watch-remove]");
+      if(!button)return;
+      const number=button.dataset.watchRemove;
+      savePinnedTeams(readPinnedTeams().filter(team=>team!==number));
+      renderIntelligence();showAlert(number+" removed from the manual watchlist.","info");
+    });
+    $("#export-watchlist").addEventListener("click",()=>{
+      const pinned=readPinnedTeams(),rows=[["Team","Organisation","Historical tier","Confidence","Live scored matches"]];
+      for(const number of pinned){
+        const team=teamLookup().get(number),base=(legacy?.seasonSnapshot?.metrics||[]).find(row=>String(row.team)===number),live=statLookup().get(number);
+        rows.push([number,team?.organization||"",base?.tier||"",base?.confidence||"",live?.scoredMatches||0]);
+      }
+      downloadCsv("1831M-manual-watchlist.csv",rows);
+      showAlert(pinned.length+" pinned team(s) exported.","info");
+    });
+
     $("#scout-match-select").addEventListener("change",renderScoutSheet);
     $("#print-scout-sheet").addEventListener("click",()=>window.print());
     $("#export-observations").addEventListener("click",exportObservations);
