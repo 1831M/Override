@@ -379,3 +379,13 @@ button.team-card:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(40
   .paper-title h2{font-size:20pt}
   .paper-checks label,.paper-lines span,.paper-bottom{font-size:9pt}
 }
+
+.watchlist-controls{display:flex;align-items:end;gap:9px;margin:12px 0}
+.watchlist-controls label{display:grid;gap:5px;flex:1;font-size:9px;font-weight:700;color:#718277}
+.watchlist-controls select{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px;background:#fbfcfa;color:var(--ink);font:inherit}
+.secondary-button{border:1px solid #b8c9ba;border-radius:8px;padding:9px 12px;background:#eef4ee;color:#3d6348;font:700 10px "Space Grotesk";cursor:pointer}
+.watchlist-divider{display:flex;align-items:center;gap:10px;margin:13px 0 7px;color:#95a198;font:800 8px "Space Grotesk";letter-spacing:.1em}
+.watchlist-divider:after{content:"";height:1px;background:var(--line);flex:1}
+.pinned-watch{border-left:3px solid #71957a;padding-left:10px}
+.watch-remove{border:1px solid var(--line);border-radius:7px;padding:6px 8px;background:#fff;color:#8b6e64;font-size:8px;cursor:pointer}
+@media(max-width:600px){.watchlist-controls{align-items:stretch;flex-direction:column}.secondary-button{align-self:flex-start}}
